@@ -2,7 +2,7 @@ import { n as queryClient } from "./query-client-DjZXlTZ-.js";
 import { t as Button } from "./button-jrDuWETO.js";
 import { t as authMeQueryOptions } from "./auth-CMcyD9sB.js";
 import { t as Route$7 } from "./_protected-BnETqvUm.js";
-import { t as Route$8 } from "./login-CgXmscwi.js";
+import { t as Route$8 } from "./login-C2YCQDp8.js";
 import { t as Route$9 } from "./clients.index-CsSY5vp0.js";
 import { t as Route$10 } from "./websites.new-CHExPPTG.js";
 import { t as Route$11 } from "./websites._websiteId-0U6H3ofo.js";
