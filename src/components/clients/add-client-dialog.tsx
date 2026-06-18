@@ -8,7 +8,7 @@ import { Input } from '#/components/ui/input'
 import { useCreateClient } from '#/hooks/use-clients'
 import type { Client } from './types'
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
+// ─── Schema ────────────────────────────────────────────────────────────
 
 const emptyToUndefined = (value: unknown) => {
   if (typeof value !== 'string') return value
