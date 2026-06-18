@@ -1,5 +1,5 @@
 {
-  "buildCommand": "vite build",
+  "buildCommand": "NITRO_PRESET=vercel vite build",
   "outputDirectory": ".output/public",
   "framework": null
 }
