@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+dist-ssr
+.output
+.vinxi
+.nitro
+.wrangler
+.tanstack
+
+# Environment
+.env
+*.local
+
+# Logs
+vite-dev.log
+vite-dev.err.log
+*.log
+
+# Editor
+.vscode
+
+# Scaffold & tooling metadata
+.cta.json
+__unconfig*
+todos.json
+
+# Claude Code session data
+.claude
+
+# Generated planning/progress docs
+SKILL.md
+IMPLEMENTATION_PROGRESS.md
+
+# OS
+.DS_Store
+Thumbs.db
