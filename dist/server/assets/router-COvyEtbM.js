@@ -14,7 +14,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 //#region src/styles.css?url
-var styles_default = "/assets/styles-DSRjIojJ.css";
+var styles_default = "/assets/styles-BMrt_wDr.css";
 //#endregion
 //#region src/routes/__root.tsx
 var Route$6 = createRootRoute({
