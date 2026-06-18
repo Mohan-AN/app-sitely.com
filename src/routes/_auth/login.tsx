@@ -157,7 +157,7 @@ function LoginScreen() {
         {view === 'login' && (
           <>
             <div className="mb-8 text-center">
-              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#102015]">Welcome back</h1>
+              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#102015]">Welcome</h1>
               <p className="text-[15px] font-medium text-[#64748B]">Sign in to continue to your workspace</p>
             </div>
 

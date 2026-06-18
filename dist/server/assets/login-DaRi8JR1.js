@@ -1,5 +1,5 @@
 import { a as REFRESH_TOKEN_KEY, i as ACCESS_TOKEN_KEY, o as apiFetch, t as Button } from "./button-jrDuWETO.js";
-import { t as Route } from "./login-C2YCQDp8.js";
+import { t as Route } from "./login-CgXmscwi.js";
 import { t as Input } from "./input-BUXT0p6g.js";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -133,7 +133,7 @@ function LoginScreen() {
 					className: "mb-8 text-center",
 					children: [/* @__PURE__ */ jsx("h1", {
 						className: "mb-2 text-3xl font-bold tracking-normal text-[#102015]",
-						children: "Welcome back"
+						children: "Welcome"
 					}), /* @__PURE__ */ jsx("p", {
 						className: "text-[15px] font-medium text-[#64748B]",
 						children: "Sign in to continue to your workspace"
