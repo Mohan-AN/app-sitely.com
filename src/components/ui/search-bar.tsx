@@ -12,17 +12,17 @@ export function SearchBar({ value, onChange, placeholder = 'Search...', classNam
   return (
     <div
       className={cn(
-        'group flex h-10 items-center gap-2 rounded-xl border border-[#c7ddb5] bg-white px-4 text-[#102315] shadow-sm transition hover:bg-[#f8faf7] dark:border-[#2f4a32] dark:bg-[#132018] dark:text-[#edf7ee] dark:hover:bg-[#203423]',
+        'group flex h-12 items-center gap-3 rounded-lg border border-[#dce3ef] bg-white px-4 text-[#172554] shadow-sm transition hover:bg-[#fbfcff] dark:border-[#25304a] dark:bg-[#111827] dark:text-[#edf2ff]',
         className,
       )}
     >
-      <Search className="size-4 shrink-0 text-[#64745F] transition group-focus-within:text-[#658354] dark:text-[#9fb49b] dark:group-focus-within:text-[#b6d7a8]" />
+      <Search className="size-5 shrink-0 text-[#253858] transition group-focus-within:text-[#4f2df5] dark:text-[#a6b2cf]" />
       <input
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-w-0 flex-1 border-0 bg-transparent text-[13px] font-medium outline-none placeholder:text-[#94A3B8] focus:ring-0 dark:placeholder:text-[#7f947b]"
+        className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium outline-none placeholder:text-[#6f7c99] focus:ring-0 dark:placeholder:text-[#8793ad]"
       />
     </div>
   )

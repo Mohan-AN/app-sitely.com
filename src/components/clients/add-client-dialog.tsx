@@ -88,20 +88,20 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
+        <Dialog.Backdrop className="fixed inset-0 z-40 bg-[#0f172a]/55 backdrop-blur-[1px] transition-opacity data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
 
-        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#e5ebe2] bg-white shadow-xl transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 dark:border-[#2f4a32] dark:bg-[#101912]">
+        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[#dce3ef] bg-white shadow-2xl transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 dark:border-[#25304a] dark:bg-[#111827]">
 
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#f0f4ee] px-6 py-4 dark:border-[#2f4a32]/60">
-            <Dialog.Title className="text-lg font-bold text-[#101828] dark:text-[#edf7ee]">
+          <div className="flex items-center justify-between px-8 pt-9">
+            <Dialog.Title className="text-[26px] font-extrabold text-[#0b1020] dark:text-[#edf2ff]">
               Add Client
             </Dialog.Title>
             <Dialog.Close
               render={
                 <button
                   type="button"
-                  className="flex size-8 items-center justify-center rounded-lg text-[#64745F] transition hover:bg-[#f0f4ee] hover:text-[#101828] dark:hover:bg-[#203423] dark:hover:text-[#edf7ee]"
+                  className="flex size-8 items-center justify-center rounded-lg text-[#172554] transition hover:bg-[#f5f3ff] hover:text-[#4f2df5] dark:hover:bg-[#172033] dark:hover:text-[#edf2ff]"
                 />
               }
             >
@@ -110,9 +110,9 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
           </div>
 
           {/* Body */}
-          <form onSubmit={handleSubmit} className="px-6 py-5">
+          <form onSubmit={handleSubmit} className="px-8 pb-8 pt-7">
             {/* Section header */}
-            <div className="mb-5 flex items-center gap-3 border-b border-[#f0f4ee] pb-4 dark:border-[#2f4a32]/60">
+            <div className="hidden">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#ddead1] text-[#658354] dark:bg-[#203423] dark:text-[#85e0a3]">
                 <UserRoundPlus className="size-4" />
               </div>
@@ -126,14 +126,14 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
               {/* Row 1: Name + Company */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">
+                <label className="text-sm font-semibold text-[#172554] dark:text-[#edf2ff]">
                     Client Name <span className="text-red-500">*</span>
                   </label>
                   <Input placeholder="Enter client name" {...form.register('name')} />
                   {e.name ? <p className="text-xs text-destructive">{e.name.message}</p> : null}
                 </div>
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Company</label>
+                <label className="text-sm font-semibold text-[#172554] dark:text-[#edf2ff]">Company</label>
                   <Input placeholder="Enter company name (optional)" {...form.register('company')} />
                   {e.company ? <p className="text-xs text-destructive">{e.company.message as string}</p> : null}
                 </div>
@@ -142,17 +142,17 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
               {/* Row 2: Phone + Email */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Phone</label>
+                  <label className="text-sm font-semibold text-[#172554] dark:text-[#edf2ff]">Phone</label>
                   <div className="relative">
-                    <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
+                    <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#7f8aa3]" />
                     <Input className="pl-9" placeholder="Enter 10-digit mobile number" {...form.register('phone')} />
                   </div>
                   {e.phone ? <p className="text-xs text-destructive">{e.phone.message as string}</p> : null}
                 </div>
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Email</label>
+                  <label className="text-sm font-semibold text-[#172554] dark:text-[#edf2ff]">Email</label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#7f8aa3]" />
                     <Input className="pl-9" type="email" placeholder="Enter email address (optional)" {...form.register('email')} />
                   </div>
                   {e.email ? <p className="text-xs text-destructive">{e.email.message as string}</p> : null}
@@ -161,9 +161,9 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
 
               {/* Row 3: City */}
               <div className="grid gap-1.5">
-                <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">City</label>
+                <label className="text-sm font-semibold text-[#172554] dark:text-[#edf2ff]">City</label>
                 <div className="relative">
-                  <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
+                  <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#7f8aa3]" />
                   <Input className="pl-9" placeholder="Enter city (optional)" {...form.register('city')} />
                 </div>
                 {e.city ? <p className="text-xs text-destructive">{e.city.message as string}</p> : null}
@@ -175,11 +175,11 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
             ) : null}
 
             {/* Footer */}
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-8 flex justify-end gap-4">
               <Button
                 type="button"
                 variant="outline"
-                className="h-10 min-w-24 rounded-xl border-[#dde5d8] dark:border-[#2f4a32]"
+                className="h-12 min-w-28 rounded-lg border-[#dce3ef] dark:border-[#25304a]"
                 onClick={handleCancel}
               >
                 Cancel
@@ -187,7 +187,7 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
               <Button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="h-10 gap-2 rounded-xl bg-[#658354] px-5 font-bold text-white hover:bg-[#4b6043]"
+                className="h-12 gap-2 rounded-lg px-6 font-bold text-white"
               >
                 <UserRoundPlus className="size-4" />
                 {createMutation.isPending ? 'Creating...' : 'Create Client'}

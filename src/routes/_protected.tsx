@@ -3,6 +3,7 @@ import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { AppLayoutSidebar } from '#/components/layout/sidebar'
 import { TopBar } from '#/components/layout/top-bar'
 import { TopBarSlotProvider } from '#/components/layout/top-bar-slot'
+import { useIsMobile } from '#/hooks/use-mobile'
 import { ACCESS_TOKEN_KEY } from '#/lib/api'
 import { authMeQueryOptions } from '#/lib/auth'
 import { queryClient } from '#/lib/query-client'
@@ -31,14 +32,28 @@ export const Route = createFileRoute('/_protected')({
 })
 
 function ProtectedLayout() {
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
+  const isMobile = useIsMobile()
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   return (
     <TopBarSlotProvider>
-      <div className="flex h-screen min-w-[1200px] overflow-hidden bg-[#f2f6ee] text-[#102315] selection:bg-[#658354] selection:text-white dark:bg-[#0b110d] dark:text-[#edf7ee]">
-        <AppLayoutSidebar isExpanded={isSidebarExpanded} onToggle={() => setIsSidebarExpanded((value) => !value)} />
+      <div className="flex h-screen overflow-hidden bg-[#f7f8fc] text-[#0f172a] selection:bg-[#4f2df5] selection:text-white dark:bg-[#0b1020] dark:text-[#edf2ff]">
+        <AppLayoutSidebar
+          isExpanded={isSidebarExpanded}
+          isMobile={isMobile}
+          mobileOpen={isSidebarOpen}
+          onMobileOpenChange={setIsSidebarOpen}
+          onToggle={() => {
+            if (isMobile) {
+              setIsSidebarOpen((value) => !value)
+              return
+            }
+            setIsSidebarExpanded((value) => !value)
+          }}
+        />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <TopBar />
+          <TopBar onMenuClick={() => setIsSidebarOpen(true)} showMenuButton={isMobile} />
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <Outlet />
           </div>

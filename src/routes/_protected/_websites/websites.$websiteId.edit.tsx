@@ -32,11 +32,11 @@ function EditWebsitePage() {
     <>
       <TopBarSlot routeKey={pathname}>
         <div className="flex w-full items-center justify-between gap-4">
-          <nav className="flex items-center gap-1.5 text-sm text-[#64745F] dark:text-[#9fb49b]">
+          <nav className="flex items-center gap-1.5 text-sm text-[#253858] dark:text-[#a6b2cf]">
             <Link
               to="/"
               search={{ page: 1, limit: 10, showFilters: false }}
-              className="transition hover:text-[#102315] dark:hover:text-[#edf7ee]"
+              className="font-semibold text-[#4f2df5] transition hover:text-[#3f22d8]"
             >
               Websites
             </Link>
@@ -44,17 +44,17 @@ function EditWebsitePage() {
             <Link
               to="/websites/$websiteId"
               params={{ websiteId }}
-              className="transition hover:text-[#102315] dark:hover:text-[#edf7ee]"
+              className="transition hover:text-[#0f172a] dark:hover:text-[#edf2ff]"
             >
               {website?.projectName ?? 'Website'}
             </Link>
             <ChevronRight className="size-3.5" />
-            <span className="font-semibold text-[#102315] dark:text-[#edf7ee]">Edit Website</span>
+            <span className="font-semibold text-[#0f172a] dark:text-[#edf2ff]">Edit Website</span>
           </nav>
 
           <Button
             variant="outline"
-            className="gap-2 rounded-xl border-[#dde5d8] text-[#334155] dark:border-[#2f4a32] dark:text-[#d6e8cf]"
+            className="gap-2 rounded-lg border-[#dce3ef] text-[#172554] dark:border-[#25304a] dark:text-[#a6b2cf]"
             render={<Link to="/websites/$websiteId" params={{ websiteId }} />}
           >
             <ArrowLeft className="size-4" />
@@ -63,13 +63,13 @@ function EditWebsitePage() {
         </div>
       </TopBarSlot>
 
-      <div className="flex flex-1 flex-col overflow-auto bg-[#f8faf7] dark:bg-[#0b110d]">
-        <div className="px-8 pb-4 pt-5">
-          <h1 className="text-2xl font-bold text-[#102315] dark:text-[#edf7ee]">Update Website</h1>
-          <p className="mt-0.5 text-sm text-[#64745F] dark:text-[#9fb49b]">Update website information and settings.</p>
+      <div className="flex flex-1 flex-col overflow-auto bg-white dark:bg-[#0b1020]">
+        <div className="px-10 pb-7 pt-5">
+          <h1 className="text-[34px] font-extrabold text-[#0b1020] dark:text-[#edf2ff]">Edit Website</h1>
+          <p className="mt-4 text-xl font-bold text-[#0f172a] dark:text-[#edf2ff]">{website?.projectName ?? 'Website'}</p>
         </div>
 
-        <div className="flex flex-1 flex-col px-8 pb-8">
+        <div className="flex flex-1 flex-col px-10 pb-8">
           {websiteQuery.isLoading ? <Skeleton className="h-[520px] rounded-xl" /> : null}
           {websiteQuery.isError ? (
             <p className="text-sm text-destructive">{(websiteQuery.error as Error).message}</p>

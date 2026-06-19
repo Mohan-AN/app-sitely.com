@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { CalendarDays, CirclePlus, Globe, Save, Trash2 } from 'lucide-react'
+import { CirclePlus, Save, Trash2 } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select'
@@ -38,7 +38,6 @@ const websiteFormSchema = z.object({
   lastInvoiceSent: optionalDate,
   lastPaymentReceived: optionalDate,
   renewalDate: optionalDate,
-  handoverDate: optionalDate,
   transferCompleted: z.boolean(),
   remarks: z.string().optional(),
 })
@@ -55,6 +54,8 @@ type WebsiteFormProps =
       onCancel?: () => void
       onDelete?: never
       isDeleting?: never
+      formId?: string
+      hideFooter?: boolean
     }
   | {
       mode: 'edit'
@@ -63,6 +64,8 @@ type WebsiteFormProps =
       onCancel?: () => void
       onDelete?: () => void
       isDeleting?: boolean
+      formId?: string
+      hideFooter?: boolean
     }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -78,7 +81,7 @@ const PLATFORMS = [
 ] as const
 
 const WEBSITE_STATUSES = ['In Progress', 'Live', 'On Hold', 'Completed', 'Discontinued']
-const MAINTENANCE_STATUSES = ['Not Started', 'Active', 'Paused', 'Expired', 'Cancelled']
+const MAINTENANCE_STATUSES = ['Not Started', 'Active', 'Paused', 'Overdue', 'Cancelled']
 const DOT_COLORS: Record<string, string> = {
   'In Progress': 'bg-amber-500',
   Live: 'bg-emerald-500',
@@ -88,7 +91,7 @@ const DOT_COLORS: Record<string, string> = {
   'Not Started': 'bg-gray-400',
   Active: 'bg-emerald-500',
   Paused: 'bg-gray-400',
-  Expired: 'bg-red-500',
+  Overdue: 'bg-red-500',
   Cancelled: 'bg-gray-400',
 }
 
@@ -106,7 +109,6 @@ function toCreatePayload(values: WebsiteFormValues): CreateWebsiteInput {
     lastInvoiceSent: values.lastInvoiceSent ?? null,
     lastPaymentReceived: values.lastPaymentReceived ?? null,
     renewalDate: values.renewalDate ?? null,
-    handoverDate: values.handoverDate ?? null,
     remarks: values.remarks?.trim() || null,
   }
 }
@@ -125,7 +127,6 @@ function toUpdatePayload(values: WebsiteFormValues): UpdateWebsiteInput {
     lastInvoiceSent: values.lastInvoiceSent ?? null,
     lastPaymentReceived: values.lastPaymentReceived ?? null,
     renewalDate: values.renewalDate ?? null,
-    handoverDate: values.handoverDate ?? null,
     transferCompleted: values.transferCompleted,
     remarks: values.remarks?.trim() || null,
   }
@@ -156,7 +157,6 @@ function getDefaultValues(website?: WebsiteDetail, initialClientId = ''): Websit
     lastInvoiceSent: toDateValue(website?.lastInvoiceSent),
     lastPaymentReceived: toDateValue(website?.lastPaymentReceived),
     renewalDate: toDateValue(website?.renewalDate),
-    handoverDate: toDateValue(website?.handoverDate),
     transferCompleted: website?.transferCompleted ?? false,
     remarks: website?.remarks ?? '',
   }
@@ -164,23 +164,11 @@ function getDefaultValues(website?: WebsiteDetail, initialClientId = ''): Websit
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SectionIcon({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#ddead1] text-[#658354] dark:bg-[#163c25] dark:text-[#85e0a3]">
+    <h3 className="text-[13px] font-semibold text-[#101828] dark:text-[#edf2ff]">
       {children}
-    </div>
-  )
-}
-
-function SectionHeader({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="flex items-center gap-4 border-b border-[#f0f4ee] pb-4 dark:border-[#2f4a32]/60">
-      <SectionIcon>{icon}</SectionIcon>
-      <div>
-        <h2 className="text-base font-extrabold leading-tight text-[#101828] dark:text-[#edf7ee]">{title}</h2>
-        <p className="mt-0.5 text-sm text-[#475467] dark:text-[#b7c8b3]">{description}</p>
-      </div>
-    </div>
+    </h3>
   )
 }
 
@@ -198,18 +186,18 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="grid gap-1.5">
-      <label className="flex items-center gap-1 text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">
+    <div className="grid gap-1">
+      <label className="flex items-center gap-1 text-[12px] font-semibold text-[#344054] dark:text-[#edf2ff]">
         {label}
         {required ? <span className="text-red-500">*</span> : null}
         {info ? (
-          <span className="ml-0.5 flex size-4 items-center justify-center rounded-full bg-[#e5ebe2] text-[10px] font-bold text-[#64745F] dark:bg-[#203423] dark:text-[#9fb49b]" title={info}>
+          <span className="ml-0.5 flex size-3.5 items-center justify-center rounded-full bg-[#eef2f7] text-[9px] font-bold text-[#253858] dark:bg-[#172033] dark:text-[#a6b2cf]" title={info}>
             ⓘ
           </span>
         ) : null}
       </label>
       {children}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {error ? <p className="text-[11px] text-destructive">{error}</p> : null}
     </div>
   )
 }
@@ -260,6 +248,7 @@ export function WebsiteForm(props: WebsiteFormProps) {
   const isEdit = mode === 'edit'
   const website = props.mode === 'edit' ? props.website : undefined
   const initialClientId = props.mode !== 'edit' ? props.initialClientId : undefined
+  const hideFooter = props.hideFooter ?? false
 
   const clientsQuery = useClientOptions(undefined)
   const createMutation = useCreateWebsite()
@@ -293,25 +282,23 @@ export function WebsiteForm(props: WebsiteFormProps) {
     }
   })
 
+  const trigger = 'h-8 text-[12px] bg-white dark:bg-[#111827]'
+  const input = 'h-8 text-[12px] bg-white dark:bg-[#111827]'
+
   return (
-    <form onSubmit={submit} className="flex w-full flex-1 flex-col gap-4">
+    <form id={props.formId} onSubmit={submit} className="flex w-full flex-1 flex-col gap-2">
 
       {/* ── Website Details ── */}
-      <div className="rounded-xl border border-[#e5ebe2] bg-white p-6 shadow-sm dark:border-[#2f4a32] dark:bg-[#101912]">
-        <SectionHeader
-          icon={<Globe className="size-5" />}
-          title="Website Details"
-          description={isEdit ? 'Update the basic information about the website.' : 'Basic information about the website project.'}
-        />
+      <section className="rounded-lg border border-[#e4e7ec] bg-[#f9fafb] p-3 dark:border-[#25304a] dark:bg-[#0d1117]">
+        <SectionTitle>Website Details</SectionTitle>
 
-        {/* Row 1: Client, Project Name, Website URL, Site Type */}
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
           <Field label="Client" required error={form.formState.errors.clientId?.message}>
             <Select
               value={form.watch('clientId') || ''}
               onValueChange={(v) => v && form.setValue('clientId', v, { shouldDirty: true, shouldValidate: true })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className={`w-full ${trigger}`}>
                 <SelectValue placeholder={clientsQuery.isLoading ? 'Loading...' : 'Select client'} />
               </SelectTrigger>
               <SelectContent>
@@ -325,11 +312,11 @@ export function WebsiteForm(props: WebsiteFormProps) {
           </Field>
 
           <Field label="Project Name" required error={form.formState.errors.projectName?.message}>
-            <Input placeholder="Enter project name" {...form.register('projectName')} />
+            <Input className={input} placeholder="e.g. Redesign Project" {...form.register('projectName')} />
           </Field>
 
           <Field label="Website URL" error={form.formState.errors.url?.message}>
-            <Input placeholder="https://example.com" {...form.register('url')} />
+            <Input className={input} placeholder="e.g. https://example.com" {...form.register('url')} />
           </Field>
 
           <Field label="Site Type" required error={form.formState.errors.siteType?.message}>
@@ -337,8 +324,8 @@ export function WebsiteForm(props: WebsiteFormProps) {
               value={form.watch('siteType') || ''}
               onValueChange={(v) => form.setValue('siteType', v as WebsiteFormValues['siteType'], { shouldDirty: true })}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select type" />
+              <SelectTrigger className={`w-full ${trigger}`}>
+                <SelectValue placeholder="Select site type" />
               </SelectTrigger>
               <SelectContent>
                 {SITE_TYPES.map((t) => (
@@ -347,16 +334,13 @@ export function WebsiteForm(props: WebsiteFormProps) {
               </SelectContent>
             </Select>
           </Field>
-        </div>
 
-        {/* Row 2: Platform, Website Status, Maintenance Status, Service Type */}
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Platform" required error={form.formState.errors.platform?.message}>
             <Select
               value={form.watch('platform') || ''}
               onValueChange={(v) => form.setValue('platform', v as WebsiteFormValues['platform'], { shouldDirty: true })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className={`w-full ${trigger}`}>
                 <SelectValue placeholder="Select platform" />
               </SelectTrigger>
               <SelectContent>
@@ -376,7 +360,7 @@ export function WebsiteForm(props: WebsiteFormProps) {
                 placeholder="Select status"
               />
             </Field>
-          ) : <div />}
+          ) : null}
 
           {isEdit ? (
             <Field label="Maintenance Status" error={form.formState.errors.maintenanceStatus?.message}>
@@ -387,123 +371,110 @@ export function WebsiteForm(props: WebsiteFormProps) {
                 placeholder="Select status"
               />
             </Field>
-          ) : <div />}
-
+          ) : null}
         </div>
-      </div>
+      </section>
 
       {/* ── Dates & Notes ── */}
-      {true ? (
-        <div className="rounded-xl border border-[#e5ebe2] bg-white p-6 shadow-sm dark:border-[#2f4a32] dark:bg-[#101912]">
-          <SectionHeader
-            icon={<CalendarDays className="size-5" />}
-            title="Dates & Notes"
-            description={isEdit ? 'Update important dates and other details.' : 'Add key dates and notes for this website.'}
-          />
+      <section className="rounded-lg border border-[#e4e7ec] bg-[#f9fafb] p-3 dark:border-[#25304a] dark:bg-[#0d1117]">
+        <SectionTitle>Dates &amp; Notes</SectionTitle>
 
-          {/* Row 1: Start Date, Hosted Date, Handover Date */}
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Start Date" error={form.formState.errors.startDate?.message}>
-              <Input type="date" {...form.register('startDate')} />
-            </Field>
-            <Field label="Hosted Date" error={form.formState.errors.hostedDate?.message}>
-              <Input type="date" {...form.register('hostedDate')} />
-            </Field>
-            <Field label="Handover Date" error={form.formState.errors.handoverDate?.message}>
-              <Input type="date" {...form.register('handoverDate')} />
-            </Field>
-          </div>
-
-          {/* Row 2: Last Invoice Sent, Last Payment Received, Renewal Date */}
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Last Invoice Sent" error={form.formState.errors.lastInvoiceSent?.message}>
-              <Input type="date" {...form.register('lastInvoiceSent')} />
-            </Field>
-            <Field label="Last Payment Received" error={form.formState.errors.lastPaymentReceived?.message}>
-              <Input type="date" {...form.register('lastPaymentReceived')} />
-            </Field>
-            <Field label="Renewal Date" error={form.formState.errors.renewalDate?.message}>
-              <Input type="date" {...form.register('renewalDate')} />
-            </Field>
-          </div>
-
-          {/* Row 3: Remarks + Transfer Completed (edit only) */}
-          <div className={cn('mt-5 grid gap-5', isEdit ? 'lg:grid-cols-3' : '')}>
-            <div className={isEdit ? 'lg:col-span-2' : ''}>
-              <Field label="Remarks" error={form.formState.errors.remarks?.message}>
-                <textarea
-                  rows={4}
-                  className="w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  placeholder="Enter any notes or remarks (optional)"
-                  {...form.register('remarks')}
-                />
-              </Field>
-            </div>
-            {isEdit ? (
-              <Field
-                label="Transfer Completed"
-                info="Whether the domain and assets transfer has been finalized."
-                error={form.formState.errors.transferCompleted?.message}
-              >
-                <Select
-                  value={form.watch('transferCompleted') ? 'yes' : 'no'}
-                  onValueChange={(v) => form.setValue('transferCompleted', v === 'yes', { shouldDirty: true })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-            ) : null}
-          </div>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
+          <Field label="Start Date" error={form.formState.errors.startDate?.message}>
+            <Input type="date" className={input} {...form.register('startDate')} />
+          </Field>
+          <Field label="Hosted Date" error={form.formState.errors.hostedDate?.message}>
+            <Input type="date" className={input} {...form.register('hostedDate')} />
+          </Field>
+          <Field label="Last Invoice Sent" error={form.formState.errors.lastInvoiceSent?.message}>
+            <Input type="date" className={input} {...form.register('lastInvoiceSent')} />
+          </Field>
+          <Field label="Last Payment Received" error={form.formState.errors.lastPaymentReceived?.message}>
+            <Input type="date" className={input} {...form.register('lastPaymentReceived')} />
+          </Field>
+          <Field label="Renewal Date" error={form.formState.errors.renewalDate?.message}>
+            <Input type="date" className={input} {...form.register('renewalDate')} />
+          </Field>
         </div>
-      ) : null}
+
+        <div className="mt-2">
+          <Field label="Remarks" error={form.formState.errors.remarks?.message}>
+            <textarea
+              rows={2}
+              className="w-full resize-none rounded-lg border border-[#dce3ef] bg-white px-2.5 py-1.5 text-[12px] text-[#172554] outline-none placeholder:text-[#7f8aa3] focus-visible:border-[#4f2df5] focus-visible:ring-3 focus-visible:ring-[#4f2df5]/15 dark:border-[#25304a] dark:bg-[#111827] dark:text-[#edf2ff]"
+              placeholder="Add any additional notes about this website..."
+              {...form.register('remarks')}
+            />
+          </Field>
+        </div>
+
+        {isEdit ? (
+          <div className="mt-2">
+            <Field
+              label="Transfer Completed"
+              info="Whether the domain and assets transfer has been finalized."
+              error={form.formState.errors.transferCompleted?.message}
+            >
+              <Select
+                value={form.watch('transferCompleted') ? 'yes' : 'no'}
+                onValueChange={(v) => form.setValue('transferCompleted', v === 'yes', { shouldDirty: true })}
+              >
+                <SelectTrigger className={`w-full ${trigger}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+        ) : null}
+      </section>
 
       {mutation.isError ? (
         <p className="text-sm text-destructive">{(mutation.error as Error).message}</p>
       ) : null}
 
-      {/* ── Footer ── */}
-      <div className="mt-auto flex shrink-0 items-center justify-between gap-3 py-4">
-        {/* Left: Delete (edit only) */}
-        <div>
-          {isEdit && props.onDelete ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2 rounded-xl border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
-              disabled={props.isDeleting}
-              onClick={props.onDelete}
-            >
-              <Trash2 className="size-4" />
-              {props.isDeleting ? 'Deleting...' : 'Delete Website'}
-            </Button>
-          ) : null}
-        </div>
+      {!hideFooter ? (
+        /* ── Footer ── */
+        <div className="mt-auto flex shrink-0 items-center justify-between gap-3 rounded-lg border border-[#dce3ef] bg-white px-7 py-4 dark:border-[#25304a] dark:bg-[#111827]">
+          {/* Left: Delete (edit only) */}
+          <div>
+            {isEdit && props.onDelete ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2 rounded-xl border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                disabled={props.isDeleting}
+                onClick={props.onDelete}
+              >
+                <Trash2 className="size-4" />
+                {props.isDeleting ? 'Deleting...' : 'Delete Website'}
+              </Button>
+            ) : null}
+          </div>
 
-        {/* Right: Cancel + Save */}
-        <div className="flex items-center gap-3">
-          {props.onCancel ? (
-            <Button type="button" variant="outline" className="h-10 min-w-24 rounded-xl" onClick={props.onCancel}>
-              Cancel
+          {/* Right: Cancel + Save */}
+          <div className="flex items-center gap-3">
+            {props.onCancel ? (
+              <Button type="button" variant="outline" className="h-12 min-w-28 rounded-lg" onClick={props.onCancel}>
+                Cancel
+              </Button>
+            ) : null}
+            <Button
+              type="submit"
+              disabled={mutation.isPending || clientsQuery.isLoading}
+              className="h-12 min-w-40 gap-2 rounded-lg font-bold text-white"
+            >
+              {isEdit ? <Save className="size-4" /> : <CirclePlus className="size-4" />}
+              {mutation.isPending
+                ? isEdit ? 'Saving...' : 'Creating...'
+                : isEdit ? 'Save Changes' : 'Create Website'}
             </Button>
-          ) : null}
-          <Button
-            type="submit"
-            disabled={mutation.isPending || clientsQuery.isLoading}
-            className="h-10 min-w-36 gap-2 rounded-xl bg-[#658354] font-bold text-white hover:bg-[#4b6043]"
-          >
-            {isEdit ? <Save className="size-4" /> : <CirclePlus className="size-4" />}
-            {mutation.isPending
-              ? isEdit ? 'Saving...' : 'Creating...'
-              : isEdit ? 'Save Changes' : 'Create Website'}
-          </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
     </form>
   )
 }

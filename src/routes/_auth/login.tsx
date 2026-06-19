@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
-import { Eye, EyeOff } from 'lucide-react'
+import { EyeOff, Lock, Mail } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, ApiError, apiFetch } from '#/lib/api'
@@ -144,68 +144,76 @@ function LoginScreen() {
 
   // ── Render ──────────────────────────────────────────────────
   return (
-    <div className="mx-auto w-full max-w-[460px] animate-in fade-in duration-500">
-      <div className="rounded-[24px] border border-[#c7ddb5] bg-white p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-12">
+    <div className="mx-auto w-full max-w-[740px] animate-in fade-in duration-500">
+      <div className="rounded-[16px] border border-[#dce3ef] bg-white px-14 py-16 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:px-16">
 
         {/* Logo */}
-        <div className="mb-8 flex flex-col items-center">
-          <div className="mb-3 flex size-14 items-center justify-center rounded-full border border-[#658354] bg-[#ddead1] text-2xl font-bold text-[#658354]">S</div>
-          <h2 className="text-[15px] font-extrabold tracking-normal text-[#102015]">Sitely</h2>
+        <div className="mb-14 flex items-center justify-center gap-4">
+          <div className="flex size-12 items-center justify-center rounded-lg bg-[#4f2df5] text-3xl font-black text-white shadow-[0_8px_20px_rgba(79,45,245,0.2)] ring-4 ring-[#ede9fe]">S</div>
+          <h2 className="text-[34px] font-extrabold tracking-normal text-[#0b1020]">Sitely</h2>
         </div>
 
         {/* ── LOGIN ── */}
         {view === 'login' && (
           <>
-            <div className="mb-8 text-center">
-              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#102015]">Welcome back</h1>
-              <p className="text-[15px] font-medium text-[#64748B]">Sign in to continue to your workspace</p>
+            <div className="mb-12 text-center">
+              <h1 className="mb-6 text-[44px] font-extrabold leading-tight tracking-normal text-[#0b1020]">Welcome back</h1>
+              <p className="mx-auto max-w-[470px] text-[24px] font-medium leading-snug text-[#53637f]">Sign in to access your websites and manage everything in one place.</p>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); loginMutation.mutate() }} className="flex flex-col gap-5" noValidate>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-[11px] font-bold uppercase tracking-widest text-[#64748B]">Email address</label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setLoginFieldErrors((f) => ({ ...f, email: undefined! })); setLoginFormError(undefined) }}
-                  className={`h-12 w-full rounded-xl border-[#c7ddb5] bg-white px-4 font-semibold text-[#102015] transition-all focus-visible:border-[#658354] focus-visible:ring-[#658354]/20 ${loginFieldErrors.email ? 'border-red-400' : ''}`}
-                  placeholder="name@example.com"
-                  required
-                  autoComplete="username"
-                />
+            <form onSubmit={(e) => { e.preventDefault(); loginMutation.mutate() }} className="flex flex-col gap-8" noValidate>
+              <div className="flex flex-col gap-3">
+                <label htmlFor="email" className="text-[18px] font-bold text-[#0f172a]">Email address</label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-6 top-1/2 size-6 -translate-y-1/2 text-[#53637f]" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setLoginFieldErrors((f) => ({ ...f, email: undefined! })); setLoginFormError(undefined) }}
+                    className={`h-[72px] rounded-lg pl-20 text-[22px] font-medium text-[#172554] ${loginFieldErrors.email ? 'border-red-400' : ''}`}
+                    placeholder="you@example.com"
+                    required
+                    autoComplete="username"
+                  />
+                </div>
                 <FieldError msg={loginFieldErrors.email} />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="text-[11px] font-bold uppercase tracking-widest text-[#64748B]">Password</label>
+              <div className="flex flex-col gap-3">
+                <label htmlFor="password" className="text-[18px] font-bold text-[#0f172a]">Password</label>
                 <div className="relative">
+                  <Lock className="pointer-events-none absolute left-6 top-1/2 size-6 -translate-y-1/2 text-[#53637f]" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setLoginFieldErrors((f) => ({ ...f, password: undefined! })); setLoginFormError(undefined) }}
-                    className={`h-12 w-full rounded-xl border-[#c7ddb5] bg-white px-4 pr-10 font-semibold text-[#102015] transition-all focus-visible:border-[#658354] focus-visible:ring-[#658354]/20 ${loginFieldErrors.password ? 'border-red-400' : ''}`}
+                    className={`h-[72px] rounded-lg pl-20 pr-14 text-[22px] font-medium text-[#172554] ${loginFieldErrors.password ? 'border-red-400' : ''}`}
                     placeholder="Enter your password"
                     required
                     autoComplete="current-password"
                   />
-                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute bottom-0 right-3 top-0 m-auto text-[#64748B] transition hover:text-[#102015]" aria-label={showPassword ? 'Hide password' : 'Show password'}>
-                    {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute bottom-0 right-6 top-0 m-auto text-[#53637f] transition hover:text-[#0f172a]" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                    <EyeOff className="size-6" />
                   </button>
                 </div>
                 <FieldError msg={loginFieldErrors.password} />
                 <FieldError msg={loginFormError} />
               </div>
 
-              <div className="flex items-center justify-end">
-                <button type="button" onClick={goToRecovery} className="text-[13px] font-bold text-[#658354] transition hover:text-[#4b6043]">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-4 text-[18px] font-semibold text-[#0f172a]">
+                  <span className="size-8 rounded-md border border-[#dce3ef] bg-white" />
+                  Remember me
+                </label>
+                <button type="button" onClick={goToRecovery} className="text-[18px] font-bold text-[#4f2df5] transition hover:text-[#3f22d8]">
                   Forgot password?
                 </button>
               </div>
 
-              <Button type="submit" disabled={loginMutation.isPending} className="h-12 rounded-xl bg-[#658354] text-[15px] font-bold text-white shadow-sm hover:bg-[#4b6043]">
-                {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+              <Button type="submit" disabled={loginMutation.isPending} className="mt-2 h-[72px] rounded-lg text-[24px] font-bold">
+                {loginMutation.isPending ? 'Signing in...' : 'Sign in to Sitely'}
               </Button>
             </form>
           </>

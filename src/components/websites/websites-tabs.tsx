@@ -1,12 +1,14 @@
+import { AlertTriangle, Clock3, Globe2, RefreshCw } from 'lucide-react'
 import { cn } from '#/lib/utils'
 import type { WebsiteStats, WebsitesFilters } from './types'
 
-export type WebsitesTabKey = 'all' | 'inProgress' | 'overdue' | 'dueSoon'
+export type WebsitesTabKey = 'all' | 'live' | 'inProgress' | 'overdue' | 'dueSoon'
 
 export const TAB_FILTERS: Record<WebsitesTabKey, Partial<WebsitesFilters>> = {
   all: {},
+  live: { websiteStatus: 'Live' },
   inProgress: { websiteStatus: 'In Progress' },
-  overdue: { maintenanceStatus: 'Expired' },
+  overdue: { maintenanceStatus: 'Overdue' },
   dueSoon: { maintenanceStatus: 'Due Soon' },
 }
 
@@ -14,38 +16,59 @@ interface WebsitesTabsProps {
   active: WebsitesTabKey
   stats: WebsiteStats | undefined
   onChange: (tab: WebsitesTabKey, filters: Partial<WebsitesFilters>) => void
+  onRefresh?: () => void
 }
 
-export function WebsitesTabs({ active, stats, onChange }: WebsitesTabsProps) {
-  const tabs: Array<{ key: WebsitesTabKey; label: string; count: number | undefined; dot?: string }> = [
-    { key: 'all',        label: 'All',         count: stats?.websites },
-    { key: 'inProgress', label: 'In Progress', count: stats?.inProgress, dot: 'bg-amber-400' },
-    { key: 'overdue',    label: 'Overdue',     count: stats?.expired,    dot: 'bg-red-500' },
-    { key: 'dueSoon',    label: 'Due Soon',    count: stats?.dueSoon,    dot: 'bg-yellow-400' },
-  ]
+function LiveDot({ className }: { className?: string }) {
+  return <span className={cn('inline-block size-3 rounded-full bg-[#22c55e]', className)} />
+}
+
+export function WebsitesTabs({ active, stats, onChange, onRefresh }: WebsitesTabsProps) {
+  const tabs = [
+    { key: 'all', label: 'All', count: stats?.websites, icon: Globe2, tone: 'text-[#5b38f6]' },
+    { key: 'live', label: 'Live', count: stats?.live, icon: LiveDot, tone: '' },
+    { key: 'inProgress', label: 'In Progress', count: stats?.inProgress, icon: Clock3, tone: 'text-[#f97316]' },
+    { key: 'overdue', label: 'Overdue', count: stats?.expired, icon: AlertTriangle, tone: 'text-[#ef4444]' },
+    { key: 'dueSoon', label: 'Due Soon', count: stats?.dueSoon, icon: RefreshCw, tone: 'text-[#2563eb]' },
+  ] as const
 
   return (
-    <div className="flex items-center gap-1">
-      {tabs.map((tab) => {
-        const isActive = active === tab.key
-        return (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => onChange(tab.key, TAB_FILTERS[tab.key])}
-            className={cn(
-              'flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-sm font-semibold text-[#334155] transition hover:bg-[#eef7ed] hover:text-[#08712f] dark:text-[#d6e8cf] dark:hover:bg-[#203423]',
-              isActive && 'bg-[#e8f6eb] text-[#08712f] dark:bg-[#203423] dark:text-[#b6d7a8]',
-            )}
-          >
-            {tab.dot ? <span className={cn('size-2 rounded-full', tab.dot)} /> : null}
-            {tab.label}
-            <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold', isActive ? 'bg-[#ccefd8] text-[#08712f]' : 'bg-slate-100 text-slate-600 dark:bg-[#26342a] dark:text-[#d6e8cf]')}>
-              {tab.count ?? '-'}
-            </span>
-          </button>
-        )
-      })}
+    <div className="flex items-center justify-between gap-4">
+      <div className="-mb-px flex min-w-0 gap-6 overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon
+          const isActive = active === tab.key
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => onChange(tab.key, TAB_FILTERS[tab.key])}
+              className={cn(
+                'flex h-12 shrink-0 items-center gap-2.5 border-b-2 border-transparent px-1 text-[14px] font-medium text-[#1f2937] transition',
+                isActive && 'border-[#5b38f6] text-[#5b38f6]',
+              )}
+            >
+              <Icon className={cn('size-4', tab.tone, isActive && tab.key === 'all' && 'text-[#5b38f6]')} />
+              <span>{tab.label}</span>
+              <span className="rounded-full bg-[#eef2f7] px-2 py-0.5 text-[12px] font-semibold text-[#334155]">
+                {tab.count ?? '-'}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {onRefresh ? (
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="mb-2 flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#e7ebf3] bg-white text-[#64748b] transition hover:border-[#d9dfec] hover:text-[#5b38f6]"
+          aria-label="Refresh websites"
+          title="Refresh websites"
+        >
+          <RefreshCw className="size-4" />
+        </button>
+      ) : null}
     </div>
   )
 }

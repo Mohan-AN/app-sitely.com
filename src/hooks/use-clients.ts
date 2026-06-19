@@ -5,6 +5,30 @@ import { DATA_STALE_TIME } from '#/lib/query-client'
 import { QUERY_KEYS } from '#/lib/constants/queryKeys'
 import type { ClientInput, ClientsFilters } from '#/components/clients/types'
 
+export function useClientStats() {
+  const all = useQuery({
+    queryKey: [QUERY_KEYS.CLIENTS_LIST, { page: 1, limit: 1 }],
+    queryFn: () => listClients({}, 1, 1),
+    staleTime: DATA_STALE_TIME,
+  })
+  const active = useQuery({
+    queryKey: [QUERY_KEYS.CLIENTS_LIST, { page: 1, limit: 1, isActive: true }],
+    queryFn: () => listClients({ isActive: true }, 1, 1),
+    staleTime: DATA_STALE_TIME,
+  })
+  const inactive = useQuery({
+    queryKey: [QUERY_KEYS.CLIENTS_LIST, { page: 1, limit: 1, isActive: false }],
+    queryFn: () => listClients({ isActive: false }, 1, 1),
+    staleTime: DATA_STALE_TIME,
+  })
+  return {
+    all: all.data?.pagination.total,
+    active: active.data?.pagination.total,
+    inactive: inactive.data?.pagination.total,
+    refetch: () => { all.refetch(); active.refetch(); inactive.refetch() },
+  }
+}
+
 export function useClients(filters: ClientsFilters, page: number, limit = 20, options?: { keepPrevious?: boolean }) {
   return useQuery({
     queryKey: [QUERY_KEYS.CLIENTS_LIST, { page, limit, ...filters }],

@@ -1,5 +1,6 @@
 export interface ClientsFilters {
   search?: string
+  isActive?: boolean
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
 }

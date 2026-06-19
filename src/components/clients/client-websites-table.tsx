@@ -13,7 +13,7 @@ const STATUS_COLORS: Record<string, { dot: string; text: string }> = {
   Live:         { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
   Active:       { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
   'In Progress':{ dot: 'bg-amber-400',   text: 'text-amber-700 dark:text-amber-400' },
-  Expired:      { dot: 'bg-red-500',     text: 'text-red-600 dark:text-red-400' },
+  Overdue:      { dot: 'bg-red-500',     text: 'text-red-600 dark:text-red-400' },
   Paused:       { dot: 'bg-gray-400',    text: 'text-gray-500 dark:text-gray-400' },
   Inactive:     { dot: 'bg-gray-400',    text: 'text-gray-500 dark:text-gray-400' },
   'On Hold':    { dot: 'bg-gray-400',    text: 'text-gray-500 dark:text-gray-400' },

@@ -14,6 +14,7 @@ export function listClients(filters: ClientsFilters, page: number, limit = 20) {
   params.set('page', String(page))
   params.set('limit', String(limit))
   if (filters.search) params.set('search', filters.search)
+  if (filters.isActive !== undefined) params.set('isActive', String(filters.isActive))
   if (filters.sortBy) params.set('sortBy', filters.sortBy)
   if (filters.sortOrder) params.set('sortOrder', filters.sortOrder)
   return apiFetch<Paginated<ClientWithCount>>(`/clients?${params.toString()}`)

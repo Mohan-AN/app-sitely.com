@@ -25,7 +25,6 @@ export interface Website {
   lastInvoiceSent: string | null
   lastPaymentReceived: string | null
   renewalDate: string | null
-  handoverDate: string | null
   transferCompleted: boolean
   remarks: string | null
   createdAt: string
@@ -84,7 +83,6 @@ export interface CreateWebsiteInput {
   lastInvoiceSent?: string | null
   lastPaymentReceived?: string | null
   renewalDate?: string | null
-  handoverDate?: string | null
   remarks?: string | null
 }
 
@@ -101,7 +99,6 @@ export interface UpdateWebsiteInput {
   lastInvoiceSent?: string | null
   lastPaymentReceived?: string | null
   renewalDate?: string | null
-  handoverDate?: string | null
   transferCompleted?: boolean
   remarks?: string | null
 }

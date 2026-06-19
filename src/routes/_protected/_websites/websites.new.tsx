@@ -15,19 +15,19 @@ function NewWebsitePage() {
   const { clientId } = Route.useSearch()
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#fbfdf8] dark:bg-[#0b110d]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-[#0b1020]">
       <TopBarSlot routeKey="/websites/new">
-        <div>
-          <nav className="flex items-center gap-2 text-sm text-[#64745F] dark:text-[#b7c8b3]">
-            <Link to="/" search={{ page: 1, limit: 10, showFilters: false }} className="transition-colors hover:text-[#08712f] dark:hover:text-[#b6d7a8]">Websites</Link>
-            <ChevronRight className="size-3.5" />
-            <span className="text-base font-extrabold text-[#102315] dark:text-[#edf7ee]">Add Website</span>
+        <div className="min-w-0">
+          <nav className="mb-1 flex items-center gap-1.5 text-[13px] text-[#667085]">
+            <Link to="/" search={{ page: 1, limit: 10, showFilters: false }} className="font-medium text-[#5b38f6] transition-colors hover:text-[#4e30e0]">Websites</Link>
+            <ChevronRight className="size-3 text-[#94a3b8]" />
+            <span>Add Website</span>
           </nav>
-          <p className="mt-0.5 text-sm text-[#64745F] dark:text-[#9fb49b]">Create a new website project and assign it to an existing client.</p>
+          <h1 className="text-[24px] font-semibold leading-none text-[#111827] dark:text-[#edf2ff]">Add Website</h1>
         </div>
       </TopBarSlot>
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pb-0 pt-6">
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-10 pb-0 pt-5">
         <WebsiteForm
           initialClientId={clientId}
           onCreated={(website) => navigate({ to: '/websites/$websiteId', params: { websiteId: website.websiteId } })}

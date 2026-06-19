@@ -125,7 +125,6 @@ function KeyDatesCard({ website }: { website: WebsiteDetailType }) {
   const dates = [
     { label: 'Start Date',             value: website.startDate },
     { label: 'Hosted Date',            value: website.hostedDate },
-    { label: 'Handover Date',          value: website.handoverDate },
     { label: 'Last Invoice Sent',      value: website.lastInvoiceSent },
     { label: 'Last Payment Received',  value: website.lastPaymentReceived },
     { label: 'Renewal Date',           value: website.renewalDate, overdue: website.isOverdue },
