@@ -1,143 +1,76 @@
 import { useState } from 'react'
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft } from 'lucide-react'
+import { Link, createFileRoute, useRouterState } from '@tanstack/react-router'
+import { ChevronRight, Pencil } from 'lucide-react'
+import { Button } from '#/components/ui/button'
 import { Skeleton } from '#/components/ui/skeleton'
+import { TopBarSlot } from '#/components/layout/top-bar-slot'
 import { WebsiteDetail, WebsiteDetailSkeleton } from '#/components/websites/website-detail'
 import { WebsiteEditDialog } from '#/components/websites/website-edit-dialog'
-import { RecordPaymentDialog } from '#/components/websites/record-payment-dialog'
-import { AddRequestDialog } from '#/components/websites/add-request-dialog'
-import { StatusPill, MaintenanceBadge } from '#/components/websites/status-badges'
-import { useCurrentBillingId, useWebsite } from '#/hooks/use-websites'
-import { cn } from '#/lib/utils'
+import { useWebsite } from '#/hooks/use-websites'
 
 export const Route = createFileRoute('/_protected/_websites/websites/$websiteId')({ component: WebsiteDetailPage })
 
 function WebsiteDetailPage() {
   const { websiteId } = Route.useParams()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
   const websiteQuery = useWebsite(websiteId)
   const website = websiteQuery.data
-  const { data: currentBillingId } = useCurrentBillingId(websiteId)
   const [editOpen, setEditOpen] = useState(false)
-  const [paymentOpen, setPaymentOpen] = useState(false)
-  const [requestOpen, setRequestOpen] = useState(false)
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto bg-[#F4F5F7]">
-      <main className="flex flex-1 flex-col gap-[20px] px-[30px] py-[26px]">
-
-        {/* Back button */}
-        <Link
-          to="/"
-          search={{ page: 1, limit: 10, showFilters: false }}
-          className="flex w-fit items-center gap-1.5 text-[13px] font-semibold text-[#5C6270] transition hover:text-[#4F5DF5]"
-        >
-          <ChevronLeft className="size-4" />
-          Back to Websites
-        </Link>
-
-        {/* Page header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
+    <>
+      <TopBarSlot routeKey={pathname}>
+        <div className="flex w-full items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1">
             {websiteQuery.isLoading ? (
-              <>
-                <Skeleton className="h-7 w-52 rounded-[8px]" />
-                <div className="mt-2 flex items-center gap-2">
-                  <Skeleton className="h-6 w-20 rounded-[7px]" />
-                  <Skeleton className="h-6 w-16 rounded-[7px]" />
-                  <Skeleton className="h-6 w-24 rounded-[7px]" />
-                </div>
-              </>
+              <Skeleton className="h-5 w-64 rounded" />
             ) : (
-              <div className="text-[22px] font-bold tracking-tight text-[#11141A]">
-                {website?.project_name ?? 'Website Details'}
-              </div>
-            )}
-            {website ? (
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                <span className="rounded-[7px] bg-[#F7F8FA] px-[11px] py-1 text-[11.5px] font-semibold text-[#5C6270]">
-                  WEB-{String(website.id).padStart(3, '0')}
+              <nav className="flex items-center gap-1.5 text-sm text-[#64745F] dark:text-[#9fb49b]">
+                <Link
+                  to="/"
+                  search={{ page: 1, limit: 10, showFilters: false }}
+                  className="transition hover:text-[#102315] dark:hover:text-[#edf7ee]"
+                >
+                  Websites
+                </Link>
+                <ChevronRight className="size-3.5" />
+                <span className="font-semibold text-[#102315] dark:text-[#edf7ee]">
+                  {website?.projectName ?? 'Website Details'}
                 </span>
-                <StatusPill label={website.website_status} />
-                <MaintenanceBadge label={website.maintenance_status} />
-                {website.build_type ? (
-                  <span className="rounded-[7px] bg-[#F7F8FA] px-[11px] py-1 text-[11.5px] font-semibold text-[#5C6270]">
-                    {website.build_type} / {website.platform}
+                {website ? (
+                  <span className="rounded-md bg-[#e8f0e4] px-2 py-0.5 text-xs font-bold text-[#64745F] dark:bg-[#203423] dark:text-[#9fb49b]">
+                    {website.websiteId}
                   </span>
                 ) : null}
-                {website.domain_handled_by ? (
-                  <span className="rounded-[7px] bg-[#F7F8FA] px-[11px] py-1 text-[11.5px] font-semibold text-[#5C6270]">
-                    Domain: {website.domain_handled_by === 'our_side' ? 'Our side' : 'Client side'}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {websiteQuery.isLoading ? (
-              <>
-                <Skeleton className="h-9 w-28 rounded-[9px]" />
-                <Skeleton className="h-9 w-28 rounded-[9px]" />
-                <Skeleton className="h-9 w-32 rounded-[9px]" />
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  disabled={!website}
-                  onClick={() => setRequestOpen(true)}
-                  className={cn('inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#E5E7EB] bg-white px-4 text-[12.5px] font-semibold text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5]', !website && 'opacity-50 cursor-not-allowed')}
-                >
-                  Add Request
-                </button>
-                <button
-                  type="button"
-                  disabled={!website}
-                  onClick={() => setEditOpen(true)}
-                  className={cn('inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#E5E7EB] bg-white px-4 text-[12.5px] font-semibold text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5]', !website && 'opacity-50 cursor-not-allowed')}
-                >
-                  Edit Website
-                </button>
-                <button
-                  type="button"
-                  disabled={!website}
-                  onClick={() => setPaymentOpen(true)}
-                  className={cn('inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-[#4F5DF5] px-4 text-[12.5px] font-semibold text-white transition hover:bg-[#3F4DE0]', !website && 'opacity-50 cursor-not-allowed')}
-                >
-                  Record Payment
-                </button>
-              </>
+              </nav>
             )}
+            <p className="text-sm text-[#64745F] dark:text-[#9fb49b]">
+              Review website information, status, and renewal details.
+            </p>
           </div>
+
+          <Button
+            className="shrink-0 gap-2 rounded-xl bg-[#658354] font-bold text-white hover:bg-[#4b6043]"
+            disabled={!website}
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="size-4" />
+            Edit Website
+          </Button>
         </div>
+      </TopBarSlot>
 
-        {/* Content */}
-        {websiteQuery.isLoading ? <WebsiteDetailSkeleton /> : null}
-        {websiteQuery.isError ? (
-          <p className="text-[13px] text-[#DC2626]">{(websiteQuery.error as Error).message}</p>
-        ) : null}
-        {website ? <WebsiteDetail website={website} /> : null}
-      </main>
+      <div className="flex flex-1 flex-col overflow-auto bg-[#f8faf7] dark:bg-[#0b110d]">
+        <main className="flex flex-1 flex-col gap-4 px-8 py-8">
+          {websiteQuery.isLoading ? <WebsiteDetailSkeleton /> : null}
+          {websiteQuery.isError ? (
+            <p className="text-sm text-destructive">{(websiteQuery.error as Error).message}</p>
+          ) : null}
+          {website ? <WebsiteDetail website={website} /> : null}
+        </main>
+      </div>
 
-      {website ? (
-        <>
-          <WebsiteEditDialog websiteId={websiteId} open={editOpen} onOpenChange={setEditOpen} />
-          <RecordPaymentDialog
-            websiteId={websiteId}
-            billingId={currentBillingId}
-            projectName={website.project_name}
-            maintenanceAmount={website.maintenance_amount}
-            open={paymentOpen}
-            onOpenChange={setPaymentOpen}
-          />
-          <AddRequestDialog
-            websiteId={websiteId}
-            projectName={website.project_name}
-            open={requestOpen}
-            onOpenChange={setRequestOpen}
-          />
-        </>
-      ) : null}
-    </div>
+      <WebsiteEditDialog websiteId={websiteId} open={editOpen} onOpenChange={setEditOpen} />
+    </>
   )
 }

@@ -8,8 +8,7 @@ const PLATFORMS = ['netlify', 'wpx']
 const SITE_TYPES = ['static', 'wordpress']
 
 interface ClientOption {
-  id: number
-  client_id: string
+  clientId: string
   name: string
 }
 
@@ -60,7 +59,7 @@ export function WebsitesFiltersBar({ filters, onChange, clients }: WebsitesFilte
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <FilterSelect placeholder="All clients" value={filters.clientId} onChange={(value) => set('clientId', value)} options={clients.map((client) => ({ value: String(client.id), label: client.name }))} />
+      <FilterSelect placeholder="All clients" value={filters.clientId} onChange={(value) => set('clientId', value)} options={clients.map((client) => ({ value: client.clientId, label: client.name }))} />
       <FilterSelect placeholder="Type" value={filters.siteType} onChange={(value) => set('siteType', value)} options={SITE_TYPES.map((type) => ({ value: type, label: capitalize(type) }))} />
       <FilterSelect placeholder="Platform" value={filters.platform} onChange={(value) => set('platform', value)} options={PLATFORMS.map((platform) => ({ value: platform, label: capitalize(platform) }))} />
       <FilterSelect

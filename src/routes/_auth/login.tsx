@@ -14,9 +14,9 @@ export const Route = createFileRoute('/_auth/login')({
 })
 
 interface LoginResponse {
-  access_token: string
-  refresh_token: string
-  user: { user_id: string; name: string; email: string; role: string; is_active: boolean }
+  accessToken: string
+  refreshToken: string
+  user: { userId: string; name: string; email: string; role: string; isActive: boolean }
 }
 
 type AuthView = 'login' | 'recovery' | 'reset'
@@ -76,8 +76,8 @@ function LoginScreen() {
         body: JSON.stringify({ email, password }),
       }),
     onSuccess: (data) => {
-      localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token)
-      localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken)
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken)
       navigate({ to: redirectTo ?? '/' })
     },
     onError: (err: Error) => {
@@ -145,19 +145,19 @@ function LoginScreen() {
   // ── Render ──────────────────────────────────────────────────
   return (
     <div className="mx-auto w-full max-w-[460px] animate-in fade-in duration-500">
-      <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-10 shadow-[0_8px_30px_rgba(17,20,26,.06)] sm:p-12">
+      <div className="rounded-[24px] border border-[#c7ddb5] bg-white p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-12">
 
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center">
-          <div className="mb-3 flex size-12 items-center justify-center rounded-[14px] bg-[#4F5DF5] text-xl font-bold text-white shadow-sm">S</div>
-          <h2 className="text-[15px] font-extrabold tracking-normal text-[#11141A]">Sitely</h2>
+          <div className="mb-3 flex size-14 items-center justify-center rounded-full border border-[#658354] bg-[#ddead1] text-2xl font-bold text-[#658354]">S</div>
+          <h2 className="text-[15px] font-extrabold tracking-normal text-[#102015]">Sitely</h2>
         </div>
 
         {/* ── LOGIN ── */}
         {view === 'login' && (
           <>
             <div className="mb-8 text-center">
-              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#11141A]">Welcome back</h1>
+              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#102015]">Welcome back</h1>
               <p className="text-[15px] font-medium text-[#64748B]">Sign in to continue to your workspace</p>
             </div>
 
@@ -169,7 +169,7 @@ function LoginScreen() {
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setLoginFieldErrors((f) => ({ ...f, email: undefined! })); setLoginFormError(undefined) }}
-                  className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 font-semibold text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${loginFieldErrors.email ? 'border-red-400' : ''}`}
+                  className={`h-12 w-full rounded-xl border-[#c7ddb5] bg-white px-4 font-semibold text-[#102015] transition-all focus-visible:border-[#658354] focus-visible:ring-[#658354]/20 ${loginFieldErrors.email ? 'border-red-400' : ''}`}
                   placeholder="name@example.com"
                   required
                   autoComplete="username"
@@ -185,12 +185,12 @@ function LoginScreen() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setLoginFieldErrors((f) => ({ ...f, password: undefined! })); setLoginFormError(undefined) }}
-                    className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 pr-10 font-semibold text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${loginFieldErrors.password ? 'border-red-400' : ''}`}
+                    className={`h-12 w-full rounded-xl border-[#c7ddb5] bg-white px-4 pr-10 font-semibold text-[#102015] transition-all focus-visible:border-[#658354] focus-visible:ring-[#658354]/20 ${loginFieldErrors.password ? 'border-red-400' : ''}`}
                     placeholder="Enter your password"
                     required
                     autoComplete="current-password"
                   />
-                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute bottom-0 right-3 top-0 m-auto text-[#64748B] transition hover:text-[#11141A]" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute bottom-0 right-3 top-0 m-auto text-[#64748B] transition hover:text-[#102015]" aria-label={showPassword ? 'Hide password' : 'Show password'}>
                     {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
                   </button>
                 </div>
@@ -199,12 +199,12 @@ function LoginScreen() {
               </div>
 
               <div className="flex items-center justify-end">
-                <button type="button" onClick={goToRecovery} className="text-[13px] font-bold text-[#4F5DF5] transition hover:text-[#3F4DE0]">
+                <button type="button" onClick={goToRecovery} className="text-[13px] font-bold text-[#658354] transition hover:text-[#4b6043]">
                   Forgot password?
                 </button>
               </div>
 
-              <Button type="submit" disabled={loginMutation.isPending} className="h-12 rounded-xl bg-[#4F5DF5] text-[15px] font-bold text-white shadow-sm hover:bg-[#3F4DE0]">
+              <Button type="submit" disabled={loginMutation.isPending} className="h-12 rounded-xl bg-[#658354] text-[15px] font-bold text-white shadow-sm hover:bg-[#4b6043]">
                 {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
@@ -215,7 +215,7 @@ function LoginScreen() {
         {view === 'recovery' && (
           <>
             <div className="mb-8 text-center">
-              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#11141A]">Reset password</h1>
+              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#102015]">Reset password</h1>
               <p className="text-[15px] font-medium text-[#64748B]">Enter your email and we'll send you a reset code.</p>
             </div>
 
@@ -227,7 +227,7 @@ function LoginScreen() {
                   type="email"
                   value={recoveryEmail}
                   onChange={(e) => { setRecoveryEmail(e.target.value); setRecoveryEmailError(undefined); setRecoveryFormError(undefined) }}
-                  className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 font-semibold text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${recoveryEmailError ? 'border-red-400' : ''}`}
+                  className={`h-12 w-full rounded-xl border-[#c7ddb5] bg-white px-4 font-semibold text-[#102015] transition-all focus-visible:border-[#658354] focus-visible:ring-[#658354]/20 ${recoveryEmailError ? 'border-red-400' : ''}`}
                   placeholder="name@example.com"
                   required
                   autoComplete="email"
@@ -236,10 +236,10 @@ function LoginScreen() {
                 <FieldError msg={recoveryFormError} />
               </div>
 
-              <Button type="submit" disabled={forgotPasswordMutation.isPending} className="h-12 rounded-xl bg-[#4F5DF5] text-[15px] font-bold text-white shadow-sm hover:bg-[#3F4DE0]">
+              <Button type="submit" disabled={forgotPasswordMutation.isPending} className="h-12 rounded-xl bg-[#658354] text-[15px] font-bold text-white shadow-sm hover:bg-[#4b6043]">
                 {forgotPasswordMutation.isPending ? 'Sending...' : 'Send reset code'}
               </Button>
-              <button type="button" className="py-2 text-[13px] font-bold text-[#64748B] transition hover:text-[#11141A]" onClick={goToLogin}>
+              <button type="button" className="py-2 text-[13px] font-bold text-[#64748B] transition hover:text-[#102015]" onClick={goToLogin}>
                 Back to login
               </button>
             </form>
@@ -250,19 +250,19 @@ function LoginScreen() {
         {view === 'reset' && (
           <>
             <div className="mb-8 text-center">
-              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#11141A]">Enter reset code</h1>
+              <h1 className="mb-2 text-3xl font-bold tracking-normal text-[#102015]">Enter reset code</h1>
               <p className="text-[15px] font-medium text-[#64748B]">
-                We sent a 4-digit code to <span className="font-bold text-[#11141A]">{recoveryEmail}</span>
+                We sent a 4-digit code to <span className="font-bold text-[#102015]">{recoveryEmail}</span>
               </p>
             </div>
 
             {resetSuccess ? (
               <div className="flex flex-col gap-6">
-                <div className="rounded-xl border border-[#E5E7EB] bg-[#ddead1]/40 px-4 py-5 text-center">
-                  <p className="text-[15px] font-bold text-[#4F5DF5]">Password updated</p>
+                <div className="rounded-xl border border-[#c7ddb5] bg-[#ddead1]/40 px-4 py-5 text-center">
+                  <p className="text-[15px] font-bold text-[#658354]">Password updated</p>
                   <p className="mt-1 text-[13px] font-medium text-[#64748B]">You can now sign in with your new password.</p>
                 </div>
-                <Button className="h-12 rounded-xl bg-[#4F5DF5] text-[15px] font-bold text-white shadow-sm hover:bg-[#3F4DE0]" onClick={goToLogin}>
+                <Button className="h-12 rounded-xl bg-[#658354] text-[15px] font-bold text-white shadow-sm hover:bg-[#4b6043]" onClick={goToLogin}>
                   Back to login
                 </Button>
               </div>
@@ -277,7 +277,7 @@ function LoginScreen() {
                     maxLength={4}
                     value={otp}
                     onChange={(e) => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 4)); setResetFieldErrors((f) => ({ ...f, otp: undefined! })); setResetFormError(undefined) }}
-                    className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 text-center text-xl font-bold tracking-[0.4em] text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${resetFieldErrors.otp ? 'border-red-400' : ''}`}
+                    className={`h-12 w-full rounded-xl border-[#c7ddb5] bg-white px-4 text-center text-xl font-bold tracking-[0.4em] text-[#102015] transition-all focus-visible:border-[#658354] focus-visible:ring-[#658354]/20 ${resetFieldErrors.otp ? 'border-red-400' : ''}`}
                     placeholder="····"
                     required
                     autoComplete="one-time-code"
@@ -294,25 +294,25 @@ function LoginScreen() {
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => { setNewPassword(e.target.value); setResetFieldErrors((f) => ({ ...f, password: undefined! })); setResetFormError(undefined) }}
-                      className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 pr-10 font-semibold text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${resetFieldErrors.password ? 'border-red-400' : ''}`}
+                      className={`h-12 w-full rounded-xl border-[#c7ddb5] bg-white px-4 pr-10 font-semibold text-[#102015] transition-all focus-visible:border-[#658354] focus-visible:ring-[#658354]/20 ${resetFieldErrors.password ? 'border-red-400' : ''}`}
                       placeholder="Enter new password"
                       required
                       autoComplete="new-password"
                     />
-                    <button type="button" onClick={() => setShowNewPassword((v) => !v)} className="absolute bottom-0 right-3 top-0 m-auto text-[#64748B] transition hover:text-[#11141A]" aria-label={showNewPassword ? 'Hide password' : 'Show password'}>
+                    <button type="button" onClick={() => setShowNewPassword((v) => !v)} className="absolute bottom-0 right-3 top-0 m-auto text-[#64748B] transition hover:text-[#102015]" aria-label={showNewPassword ? 'Hide password' : 'Show password'}>
                       {showNewPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
                     </button>
                   </div>
                   <FieldError msg={resetFieldErrors.password} />
                 </div>
 
-                <Button type="submit" disabled={resetPasswordMutation.isPending} className="h-12 rounded-xl bg-[#4F5DF5] text-[15px] font-bold text-white shadow-sm hover:bg-[#3F4DE0]">
+                <Button type="submit" disabled={resetPasswordMutation.isPending} className="h-12 rounded-xl bg-[#658354] text-[15px] font-bold text-white shadow-sm hover:bg-[#4b6043]">
                   {resetPasswordMutation.isPending ? 'Resetting...' : 'Reset password'}
                 </Button>
 
                 <div className="flex items-center justify-center gap-1 text-[13px] font-medium text-[#64748B]">
                   <span>Didn't receive a code?</span>
-                  <button type="button" onClick={goToRecovery} className="font-bold text-[#4F5DF5] transition hover:text-[#3F4DE0]">
+                  <button type="button" onClick={goToRecovery} className="font-bold text-[#658354] transition hover:text-[#4b6043]">
                     Resend
                   </button>
                 </div>

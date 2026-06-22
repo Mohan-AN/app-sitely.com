@@ -101,7 +101,7 @@ export function ClientWebsitesTable({ websites }: { websites: ClientWebsiteSumma
           const cleanUrl = w.url ? w.url.replace(/^https?:\/\//, '') : null
           return (
             <div
-              key={w.id}
+              key={w.websiteId}
               className={cn(
                 'grid min-h-[56px] items-center border-b border-[#e5ebe2]/60 text-[13px] hover:bg-[#f5f9f2] dark:border-[#2f4a32]/40 dark:hover:bg-[#17251b]',
                 gridCols,
@@ -112,10 +112,10 @@ export function ClientWebsitesTable({ websites }: { websites: ClientWebsiteSumma
               <div className="min-w-0 px-3 py-2">
                 <Link
                   to="/websites/$websiteId"
-                  params={{ websiteId: String(w.id) }}
+                  params={{ websiteId: w.websiteId }}
                   className="block truncate font-bold text-[#102315] hover:underline dark:text-[#edf7ee]"
                 >
-                  {w.project_name}
+                  {w.projectName}
                 </Link>
                 {cleanUrl ? (
                   <a
@@ -133,13 +133,13 @@ export function ClientWebsitesTable({ websites }: { websites: ClientWebsiteSumma
               {/* Website ID */}
               <div className="px-3 py-2">
                 <span className="rounded-md bg-[#e8f0e4] px-1.5 py-0.5 text-[11px] font-bold text-[#64745F] dark:bg-[#203423] dark:text-[#9fb49b]">
-                  {w.website_id}
+                  {w.websiteId}
                 </span>
               </div>
 
               {/* Type */}
               <div className="px-3 py-2">
-                <SiteTypeCell siteType={w.site_type} />
+                <SiteTypeCell siteType={w.siteType} />
               </div>
 
               {/* Platform */}
@@ -149,17 +149,17 @@ export function ClientWebsitesTable({ websites }: { websites: ClientWebsiteSumma
 
               {/* Status */}
               <div className="px-3 py-2">
-                <StatusDot label={w.website_status} />
+                <StatusDot label={w.websiteStatus} />
               </div>
 
               {/* Maintenance */}
               <div className="px-3 py-2">
-                <StatusDot label={w.maintenance_status} />
+                <StatusDot label={w.maintenanceStatus} />
               </div>
 
               {/* Renewal Date */}
               <div className="px-3 py-2 text-xs text-[#64745F] dark:text-[#9fb49b]">
-                {w.current_billing_due_date ? formatDate(w.current_billing_due_date) : <span className="text-[#9fb49b]">—</span>}
+                {w.renewalDate ? formatDate(w.renewalDate) : <span className="text-[#9fb49b]">—</span>}
               </div>
 
               {/* Actions */}
@@ -169,10 +169,10 @@ export function ClientWebsitesTable({ websites }: { websites: ClientWebsiteSumma
                     <MoreHorizontal className="size-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem render={<Link to="/websites/$websiteId" params={{ websiteId: String(w.id) }} />}>
+                    <DropdownMenuItem render={<Link to="/websites/$websiteId" params={{ websiteId: w.websiteId }} />}>
                       View details
                     </DropdownMenuItem>
-                    <DropdownMenuItem render={<Link to="/websites/$websiteId/edit" params={{ websiteId: String(w.id) }} />}>
+                    <DropdownMenuItem render={<Link to="/websites/$websiteId/edit" params={{ websiteId: w.websiteId }} />}>
                       Edit website
                     </DropdownMenuItem>
                   </DropdownMenuContent>

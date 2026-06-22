@@ -1,8 +1,7 @@
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { TopBarSlot } from '#/components/layout/top-bar-slot'
 import { WebsiteForm } from '#/components/websites/website-form'
-
-const FORM_ID = 'new-website-form'
 
 export const Route = createFileRoute('/_protected/_websites/websites/new')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -16,60 +15,22 @@ function NewWebsitePage() {
   const { clientId } = Route.useSearch()
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto bg-[#F4F5F7]">
-      <main className="flex flex-1 flex-col gap-[12px] px-[24px] py-[16px]">
-
-        {/* Page bar — matches prototype exactly: title + subtitle on left, Cancel + Save Website on right */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="text-[21px] font-bold tracking-tight text-[#11141A]">Add Website</div>
-            <div className="mt-[3px] text-[12.5px] text-[#8A8F98]">Capture website, type, domain ownership, maintenance, costs, and dates</div>
-          </div>
-          <div className="flex items-center gap-2">
-            {clientId ? (
-              <Link
-                to="/clients/$clientId"
-                params={{ clientId }}
-                className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#E5E7EB] bg-white px-4 text-[12.5px] font-semibold text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5]"
-              >
-                Cancel
-              </Link>
-            ) : (
-              <Link
-                to="/"
-                search={{ page: 1, limit: 10, showFilters: false }}
-                className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#E5E7EB] bg-white px-4 text-[12.5px] font-semibold text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5]"
-              >
-                Cancel
-              </Link>
-            )}
-            <button
-              type="submit"
-              form={FORM_ID}
-              className="inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-[#4F5DF5] px-4 text-[12.5px] font-semibold text-white transition hover:bg-[#3F4DE0]"
-            >
-              Save Website
-            </button>
-          </div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#fbfdf8] dark:bg-[#0b110d]">
+      <TopBarSlot routeKey="/websites/new">
+        <div>
+          <nav className="flex items-center gap-2 text-sm text-[#64745F] dark:text-[#b7c8b3]">
+            <Link to="/" search={{ page: 1, limit: 10, showFilters: false }} className="transition-colors hover:text-[#08712f] dark:hover:text-[#b6d7a8]">Websites</Link>
+            <ChevronRight className="size-3.5" />
+            <span className="text-base font-extrabold text-[#102315] dark:text-[#edf7ee]">Add Website</span>
+          </nav>
+          <p className="mt-0.5 text-sm text-[#64745F] dark:text-[#9fb49b]">Create a new website project and assign it to an existing client.</p>
         </div>
+      </TopBarSlot>
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-[13px] text-[#8A8F98]">
-          {clientId ? (
-            <Link to="/clients/$clientId" params={{ clientId }} className="transition hover:text-[#4F5DF5]">Client</Link>
-          ) : (
-            <Link to="/" search={{ page: 1, limit: 10, showFilters: false }} className="flex items-center gap-1 transition hover:text-[#4F5DF5]">
-              <ChevronLeft className="size-3.5" />Websites
-            </Link>
-          )}
-          <ChevronRight className="size-3.5" />
-          <span className="font-semibold text-[#11141A]">Add Website</span>
-        </nav>
-
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pb-0 pt-6">
         <WebsiteForm
-          formId={FORM_ID}
           initialClientId={clientId}
-          onCreated={(website) => navigate({ to: '/websites/$websiteId', params: { websiteId: String(website.id) } })}
+          onCreated={(website) => navigate({ to: '/websites/$websiteId', params: { websiteId: website.websiteId } })}
           onCancel={() => navigate({ to: '/', search: { page: 1, limit: 10, showFilters: false } })}
         />
       </main>

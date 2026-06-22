@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Link, createFileRoute, useNavigate, useRouterState } from '@tanstack/react-router'
+import { ArrowLeft, ChevronRight } from 'lucide-react'
+import { Button } from '#/components/ui/button'
 import { ConfirmDialog } from '#/components/ui/confirm-dialog'
 import { Skeleton } from '#/components/ui/skeleton'
+import { TopBarSlot } from '#/components/layout/top-bar-slot'
 import { ClientForm } from '#/components/clients/client-form'
 import { useClient, useDeleteClient } from '#/hooks/use-clients'
 
@@ -10,6 +12,7 @@ export const Route = createFileRoute('/_protected/_clients/clients/$clientId/edi
 
 function EditClientPage() {
   const { clientId } = Route.useParams()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
   const navigate = useNavigate()
   const clientQuery = useClient(clientId)
   const client = clientQuery.data
@@ -26,44 +29,65 @@ function EditClientPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto bg-[#F4F5F7]">
-      <main className="flex flex-1 flex-col gap-[22px] px-[30px] py-[26px]">
+    <>
+      <TopBarSlot routeKey={pathname}>
+        <div className="flex w-full items-center justify-between gap-4">
+          <nav className="flex items-center gap-1.5 text-sm text-[#64745F] dark:text-[#9fb49b]">
+            <Link
+              to="/clients"
+              search={{ page: 1, limit: 20 }}
+              className="transition hover:text-[#102315] dark:hover:text-[#edf7ee]"
+            >
+              Clients
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <Link
+              to="/clients/$clientId"
+              params={{ clientId }}
+              className="transition hover:text-[#102315] dark:hover:text-[#edf7ee]"
+            >
+              {client?.name ?? 'Client'}
+            </Link>
+            <ChevronRight className="size-3.5" />
+            <span className="font-semibold text-[#102315] dark:text-[#edf7ee]">Edit Client</span>
+          </nav>
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-[13px] text-[#8A8F98]">
-          <Link to="/clients" search={{ page: 1, limit: 20 }} className="flex items-center gap-1 transition hover:text-[#4F5DF5]">
-            <ChevronLeft className="size-3.5" />
-            Clients
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <Link to="/clients/$clientId" params={{ clientId }} className="transition hover:text-[#4F5DF5]">
-            {client?.name ?? 'Client'}
-          </Link>
-          <ChevronRight className="size-3.5" />
-          <span className="font-semibold text-[#11141A]">Edit Client</span>
-        </nav>
+          <Button
+            variant="outline"
+            className="gap-2 rounded-xl border-[#dde5d8] text-[#334155] dark:border-[#2f4a32] dark:text-[#d6e8cf]"
+            render={<Link to="/clients/$clientId" params={{ clientId }} />}
+          >
+            <ArrowLeft className="size-4" />
+            Back to Client
+          </Button>
+        </div>
+      </TopBarSlot>
 
-        {/* Page bar */}
-        <div>
-          <div className="text-[21px] font-bold tracking-tight text-[#11141A]">Edit Client</div>
-          <div className="mt-[3px] text-[12.5px] text-[#8A8F98]">Update client contact and company details.</div>
+      <div className="flex flex-1 flex-col overflow-auto bg-[#f8faf7] dark:bg-[#0b110d]">
+        <div className="px-8 pb-4 pt-5">
+          <h1 className="text-2xl font-bold text-[#102315] dark:text-[#edf7ee]">Edit Client</h1>
+          <p className="mt-0.5 text-sm text-[#64745F] dark:text-[#9fb49b]">
+            Update client contact and company details.
+          </p>
         </div>
 
-        {clientQuery.isLoading ? <Skeleton className="h-80 rounded-[14px]" /> : null}
-        {clientQuery.isError ? (
-          <p className="text-[13px] text-[#DC2626]">{(clientQuery.error as Error).message}</p>
-        ) : null}
-        {client ? (
-          <ClientForm
-            mode="edit"
-            client={client}
-            onUpdated={() => navigate({ to: '/clients/$clientId', params: { clientId } })}
-            onCancel={() => navigate({ to: '/clients/$clientId', params: { clientId } })}
-            onDelete={() => setShowDeleteDialog(true)}
-            isDeleting={deleteMutation.isPending}
-          />
-        ) : null}
-      </main>
+        <div className="flex flex-1 flex-col px-8 pb-8">
+          {clientQuery.isLoading ? <Skeleton className="h-80 rounded-xl" /> : null}
+          {clientQuery.isError ? (
+            <p className="text-sm text-destructive">{(clientQuery.error as Error).message}</p>
+          ) : null}
+          {client ? (
+            <ClientForm
+              mode="edit"
+              client={client}
+              onUpdated={() => navigate({ to: '/clients/$clientId', params: { clientId } })}
+              onCancel={() => navigate({ to: '/clients/$clientId', params: { clientId } })}
+              onDelete={() => setShowDeleteDialog(true)}
+              isDeleting={deleteMutation.isPending}
+            />
+          ) : null}
+        </div>
+      </div>
 
       <ConfirmDialog
         open={showDeleteDialog}
@@ -74,6 +98,6 @@ function EditClientPage() {
         onConfirm={handleDeleteConfirm}
         isPending={deleteMutation.isPending}
       />
-    </div>
+    </>
   )
 }

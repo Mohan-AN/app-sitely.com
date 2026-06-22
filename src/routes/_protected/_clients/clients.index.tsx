@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Button } from '#/components/ui/button'
+import { SearchBar } from '#/components/ui/search-bar'
 import { PageSizeSelector } from '#/components/ui/page-size-selector'
 import { cn, toPositiveInt } from '#/lib/utils'
 import { useDebounce } from '#/hooks/use-debounce'
+import { TopBarSlot } from '#/components/layout/top-bar-slot'
 import { ClientsTable } from '#/components/clients/clients-table'
 import { AddClientDialog } from '#/components/clients/add-client-dialog'
 import { EditClientDialog } from '#/components/clients/edit-client-dialog'
@@ -29,6 +32,7 @@ export const Route = createFileRoute('/_protected/_clients/clients/')({
 function ClientsPage() {
   const routeSearch = Route.useSearch()
   const navigate = Route.useNavigate()
+  const globalNavigate = useNavigate()
   const filters: ClientsFilters = { search: routeSearch.search, sortBy: routeSearch.sortBy, sortOrder: routeSearch.sortOrder }
   const [searchQuery, setSearchQuery] = useState(routeSearch.search ?? '')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
@@ -37,15 +41,24 @@ function ClientsPage() {
   const clientsQuery = useClients(filters, routeSearch.page, routeSearch.limit, { keepPrevious: true })
   const pagination = clientsQuery.data?.pagination
 
-  const handleClientCreated = (_client: Client) => {
-    navigate({ search: (old) => ({ ...old, page: 1 }) })
+  const handleClientCreated = (client: Client) => {
+    globalNavigate({ to: '/clients/$clientId', params: { clientId: client.clientId } })
   }
 
-  useEffect(() => { setSearchQuery(routeSearch.search ?? '') }, [routeSearch.search])
+  useEffect(() => {
+    setSearchQuery(routeSearch.search ?? '')
+  }, [routeSearch.search])
 
   useEffect(() => {
     if (debouncedSearch === (routeSearch.search ?? '')) return
-    navigate({ search: (old) => ({ ...old, search: debouncedSearch || undefined, page: 1 }), replace: true })
+    navigate({
+      search: (old) => ({
+        ...old,
+        search: debouncedSearch || undefined,
+        page: 1,
+      }),
+      replace: true,
+    })
   }, [debouncedSearch, navigate, routeSearch.search])
 
   const updateSearch = (next: Partial<ClientsSearch>) => {
@@ -61,82 +74,74 @@ function ClientsPage() {
   }
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col gap-[22px] overflow-hidden bg-[#F4F5F7] px-[30px] py-[26px]">
-      {/* Page bar */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-[21px] font-bold tracking-tight text-[#11141A]">Clients</div>
-          <div className="mt-[3px] text-[12.5px] text-[#8A8F98]">Search, manage, and open each client's linked websites</div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setAddDialogOpen(true)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-[#4F5DF5] px-4 text-[12.5px] font-semibold text-white transition hover:bg-[#3F4DE0]"
-        >
-          + Add Client
-        </button>
-      </div>
+    <main className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden bg-[#f2f6ee] p-4 dark:bg-[#0b110d]">
+      <TopBarSlot routeKey="/clients">
+        <section className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search by name or company..." className="w-[300px]" />
 
-      {/* Table card */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(17,20,26,.04)]">
-        {/* Toolbar */}
-        <div className="border-b border-[#E5E7EB] px-[18px] py-[14px]">
-          <div className="flex items-center gap-2 rounded-[9px] border border-[#E5E7EB] bg-[#F7F8FA] px-3 py-2 max-w-[300px]">
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search clients..."
-              className="w-full border-none bg-transparent text-[12.5px] text-[#1F2430] outline-none placeholder:text-[#A8ACB4]"
-            />
-          </div>
-        </div>
+          <Button
+            className="h-10 rounded-xl bg-[#658354] px-5 font-bold text-white hover:bg-[#4b6043]"
+            onClick={() => setAddDialogOpen(true)}
+          >
+            <Plus className="size-4" />
+            Add Client
+          </Button>
+        </section>
+      </TopBarSlot>
 
-        <ClientsTable
-          clients={clientsQuery.data?.items}
-          isLoading={clientsQuery.isLoading}
-          isError={clientsQuery.isError}
-          error={clientsQuery.error as Error | null}
-          sortBy={routeSearch.sortBy}
-          sortOrder={routeSearch.sortOrder}
-          onSortChange={handleSortChange}
-          onEdit={setEditTarget}
-        />
+      <ClientsTable
+        clients={clientsQuery.data?.items}
+        isLoading={clientsQuery.isLoading}
+        isError={clientsQuery.isError}
+        error={clientsQuery.error as Error | null}
+        sortBy={routeSearch.sortBy}
+        sortOrder={routeSearch.sortOrder}
+        onSortChange={handleSortChange}
+        onEdit={setEditTarget}
+      />
 
-        {pagination ? (
-          <footer className="flex shrink-0 items-center justify-between border-t border-[#E5E7EB] bg-white px-5 py-3 text-sm text-[#8A8F98]">
-            <PageSizeSelector value={routeSearch.limit} onChange={(limit) => updateSearch({ limit, page: 1 })} total={pagination.total} />
-            <div className="flex items-center gap-3">
-              <span className="text-[12px] text-[#8A8F98]">
-                Page <span className="font-semibold text-[#5C6270]">{pagination.page}</span> of <span className="font-semibold text-[#5C6270]">{pagination.totalPages}</span>
-              </span>
-              <div className="flex items-center gap-1.5">
-                <button type="button" disabled={pagination.page <= 1} onClick={() => updateSearch({ page: pagination.page - 1 })} aria-label="Previous page"
-                  className="flex size-[29px] items-center justify-center rounded-[7px] text-[#8A8F98] transition hover:bg-[#F4F5F7] disabled:opacity-40 disabled:cursor-not-allowed">
-                  <ChevronLeft className="size-4" />
-                </button>
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((n) => (
-                  <button key={n} type="button" onClick={() => updateSearch({ page: n })}
-                    className={cn('flex size-[29px] items-center justify-center rounded-[7px] text-[12px] font-semibold transition',
-                      n === pagination.page ? 'bg-[#4F5DF5] text-white' : 'text-[#5C6270] hover:bg-[#F4F5F7]')}>
-                    {n}
-                  </button>
-                ))}
-                <button type="button" disabled={pagination.page >= pagination.totalPages} onClick={() => updateSearch({ page: pagination.page + 1 })} aria-label="Next page"
-                  className="flex size-[29px] items-center justify-center rounded-[7px] text-[#8A8F98] transition hover:bg-[#F4F5F7] disabled:opacity-40 disabled:cursor-not-allowed">
-                  <ChevronRight className="size-4" />
-                </button>
-              </div>
-            </div>
-          </footer>
-        ) : null}
-      </div>
+      <AddClientDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onCreated={handleClientCreated}
+      />
 
-      <AddClientDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} onCreated={handleClientCreated} />
       <EditClientDialog
         open={editTarget !== null}
         onOpenChange={(open) => { if (!open) setEditTarget(null) }}
         client={editTarget}
       />
+
+      {pagination ? (
+        <footer className="flex shrink-0 items-center justify-between rounded-xl border border-[#c7ddb5] bg-white px-5 py-3.5 text-sm text-[#64745F] shadow-sm dark:border-[#2f4a32] dark:bg-[#101912] dark:text-[#b7c8b3]">
+          <PageSizeSelector value={routeSearch.limit} onChange={(limit) => updateSearch({ limit, page: 1 })} total={pagination.total} />
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="icon-lg" disabled={pagination.page <= 1} onClick={() => updateSearch({ page: pagination.page - 1 })} aria-label="Previous page">
+              <ChevronLeft />
+            </Button>
+            {Array.from({ length: pagination.totalPages }, (_, index) => index + 1).map((pageNumber) => (
+              <Button
+                key={pageNumber}
+                variant={pageNumber === pagination.page ? 'default' : 'ghost'}
+                size="icon-lg"
+                className={cn(pageNumber === pagination.page && 'bg-[#ddead1] text-[#658354] hover:bg-[#c7ddb5]')}
+                onClick={() => updateSearch({ page: pageNumber })}
+              >
+                {pageNumber}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="icon-lg"
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => updateSearch({ page: pagination.page + 1 })}
+              aria-label="Next page"
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+        </footer>
+      ) : null}
     </main>
   )
 }

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { listClientOptions } from '#/lib/clients-api'
 import { DATA_STALE_TIME } from '#/lib/query-client'
-import { createWebsite, deleteWebsite, getWebsite, getWebsiteActivity, getWebsiteProfit, getWebsiteStats, getWebsiteTimeline, listWebsites, updateWebsite } from '#/lib/websites-api'
+import { createWebsite, deleteWebsite, getWebsite, getWebsiteActivity, getWebsiteStats, listWebsites, updateWebsite } from '#/lib/websites-api'
 import { QUERY_KEYS } from '#/lib/constants/queryKeys'
 import type { CreateWebsiteInput, UpdateWebsiteInput, WebsitesFilters } from '#/components/websites/types'
 
@@ -58,47 +58,6 @@ export function useWebsiteActivity(websiteId: string, page: number) {
     queryKey: [QUERY_KEYS.WEBSITE_ACTIVITY, websiteId, { page }],
     queryFn: () => getWebsiteActivity(websiteId, page),
     staleTime: DATA_STALE_TIME,
-  })
-}
-
-// Fires GET /websites/:id/timeline?year=YYYY
-// One call returns everything for the timeline: year range, months, billing per month, all events
-export function useWebsiteTimeline(websiteId: string, year: number) {
-  return useQuery({
-    queryKey: [QUERY_KEYS.WEBSITE_TIMELINE, websiteId, year],
-    queryFn: () => getWebsiteTimeline(websiteId, year),
-    staleTime: DATA_STALE_TIME,
-    enabled: !!websiteId,
-  })
-}
-
-// Returns the billing_id of the current unpaid/overdue billing period (or null if none).
-// Uses the same cache key as useWebsiteTimeline so no extra network call if the timeline
-// is already loaded by WebsiteDetail on the same page.
-export function useCurrentBillingId(websiteId: string) {
-  const year = new Date().getFullYear()
-  return useQuery({
-    queryKey: [QUERY_KEYS.WEBSITE_TIMELINE, websiteId, year],
-    queryFn: () => getWebsiteTimeline(websiteId, year),
-    staleTime: DATA_STALE_TIME,
-    enabled: !!websiteId,
-    select: (data) => {
-      const period = data.periods.find(
-        (p) => p.billing && (p.billing.status === 'pending' || p.billing.status === 'overdue'),
-      )
-      return period?.billing?.billing_id ?? null
-    },
-  })
-}
-
-// Fires GET /websites/:id/profit?year=YYYY
-// Returns the annual profit tiles: maintenance collected, paid features, costs, net profit
-export function useWebsiteProfit(websiteId: string, year: number) {
-  return useQuery({
-    queryKey: [QUERY_KEYS.WEBSITE_PROFIT, websiteId, year],
-    queryFn: () => getWebsiteProfit(websiteId, year),
-    staleTime: DATA_STALE_TIME,
-    enabled: !!websiteId,
   })
 }
 

@@ -1,1 +1,0 @@
-function e(e){if(!e)return`—`;let t=parseFloat(e);return isNaN(t)?`—`:new Intl.NumberFormat(`en-IN`,{style:`currency`,currency:`INR`,minimumFractionDigits:0,maximumFractionDigits:0}).format(t)}function t(e){return e?new Date(e).toLocaleDateString(`en-US`,{month:`short`,day:`numeric`,year:`numeric`}):`—`}export{t as n,e as t};

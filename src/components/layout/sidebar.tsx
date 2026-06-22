@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronUp, ChevronsLeft, ChevronsRight, Globe, LogOut, Settings, Users } from 'lucide-react'
+import { ChevronsLeft, ChevronsRight, ChevronsUpDown, Globe, LogOut, Settings, Users } from 'lucide-react'
 import { Avatar, AvatarFallback } from '#/components/ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, apiFetch } from '#/lib/api'
 import { authMeQueryOptions } from '#/lib/auth'
-import { useWebsiteStats } from '#/hooks/use-websites'
 import { cn } from '#/lib/utils'
+import { ThemeToggle } from '#/components/theme-toggle'
 
-const SIDEBAR_KEY = 'sitely-sidebar-collapsed'
+interface AppLayoutSidebarProps {
+  isExpanded: boolean
+  onToggle: () => void
+}
+
+const NAV_ITEMS = [
+  { icon: Globe, path: '/', label: 'Websites', id: 'websites' },
+  { icon: Users, path: '/clients', label: 'Clients', id: 'clients' },
+]
+
+function SitelyMark() {
+  return (
+    <div className="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-[#658354] bg-[#ddead1] text-lg font-black text-[#658354] shadow-sm">
+      S
+    </div>
+  )
+}
 
 function initials(name?: string) {
   if (!name) return 'S'
-  return name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 }
 
-export function AppLayoutSidebar() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
+function SidebarUserMenu({ isExpanded }: { isExpanded: boolean }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { data: user } = useQuery(authMeQueryOptions)
-  const { data: stats } = useWebsiteStats()
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === 'true')
 
-  const toggle = () => {
-    setCollapsed((prev) => {
-      localStorage.setItem(SIDEBAR_KEY, String(!prev))
-      return !prev
-    })
-  }
+  const { data: user } = useQuery(authMeQueryOptions)
 
   const logoutMutation = useMutation({
     mutationFn: () =>
@@ -45,150 +56,146 @@ export function AppLayoutSidebar() {
     },
   })
 
-  const overdueCount = stats ? stats.maintenance_overdue_count + stats.domain_overdue_count : 0
-  const isWebsitesActive = pathname === '/' || pathname.startsWith('/websites')
-  const isClientsActive = pathname.startsWith('/clients')
+  const roleDisplay = (user?.role ?? 'admin').toUpperCase().replace('_', ' ')
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            className={cn(
+              'flex w-full cursor-pointer items-center gap-3 rounded-xl border border-[#c7ddb5] bg-white p-2 shadow-sm transition hover:bg-[#ddead1]/40 dark:border-[#2f4a32] dark:bg-[#132018] dark:hover:bg-[#203423]',
+              !isExpanded && 'justify-center',
+            )}
+          />
+        }
+      >
+        <Avatar className="size-9 shrink-0 rounded-full">
+          <AvatarFallback className="rounded-full bg-[#658354] text-[12px] font-bold text-white">{initials(user?.name)}</AvatarFallback>
+        </Avatar>
+        {isExpanded ? (
+          <>
+            <div className="min-w-0 flex-1 text-left">
+              <div className="truncate text-[13px] font-bold leading-none text-[#102315] dark:text-[#edf7ee]">{user?.name ?? 'Loading...'}</div>
+              <div className="mt-1 truncate text-[9px] font-extrabold uppercase tracking-wider text-[#64745F]">{roleDisplay}</div>
+            </div>
+            <ChevronsUpDown className="size-3.5 shrink-0 text-[#64745F] dark:text-[#9fb49b]" />
+          </>
+        ) : null}
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        side="top"
+        align="start"
+        sideOffset={8}
+        className="min-w-[220px] rounded-xl border border-[#c7ddb5] bg-white p-1.5 shadow-lg dark:border-[#2f4a32] dark:bg-[#132018]"
+      >
+        {/* User info header */}
+        <div className="flex items-center gap-3 px-2 py-2">
+          <Avatar className="size-9 shrink-0 rounded-full">
+            <AvatarFallback className="rounded-full bg-[#658354] text-[12px] font-bold text-white">{initials(user?.name)}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-bold text-[#102315] dark:text-[#edf7ee]">{user?.name ?? '—'}</p>
+            <p className="truncate text-[11px] text-[#64745F] dark:text-[#9fb49b]">{user?.email}</p>
+          </div>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 rounded-lg px-2 py-2 text-[13px] font-medium text-[#102315] focus:bg-[#f2f6ee] dark:text-[#edf7ee] dark:focus:bg-[#203423]"
+            onClick={() => navigate({ to: '/settings' })}
+          >
+            <Settings className="size-4 text-[#64745F]" />
+            Settings
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 rounded-lg px-2 py-2 text-[13px] font-medium text-red-600 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-950/30"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+          >
+            <LogOut className="size-4" />
+            {logoutMutation.isPending ? 'Signing out…' : 'Sign out'}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export function AppLayoutSidebar({ isExpanded, onToggle }: AppLayoutSidebarProps) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const ToggleIcon = isExpanded ? ChevronsLeft : ChevronsRight
 
   return (
     <aside
       className={cn(
-        'flex h-full shrink-0 select-none flex-col border-r border-[#E5E7EB] bg-white transition-[width] duration-200 ease-in-out overflow-hidden',
-        collapsed ? 'w-[60px]' : 'w-[220px]',
+        'relative flex h-full shrink-0 select-none flex-col justify-between border-r border-[#c7ddb5] bg-white pb-6 pt-3 text-[#102315] transition-all duration-300 ease-in-out dark:border-[#2f4a32] dark:bg-[#0f1712] dark:text-[#edf7ee]',
+        isExpanded ? 'w-56 px-4' : 'w-[72px] px-3',
       )}
     >
-      {/* Brand */}
-      <div className={cn('flex items-center border-b border-[#E5E7EB] px-[12px] py-[14px]', collapsed ? 'justify-center' : 'justify-between gap-[10px]')}>
-        <div className="flex shrink-0 items-center gap-[10px]">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-[#4F5DF5] text-[14px] font-bold text-white">S</div>
-          {!collapsed && (
-            <span className="whitespace-nowrap text-[15px] font-bold tracking-tight text-[#11141A]">Sitely</span>
-          )}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute -right-4 top-7 z-30 flex size-8 cursor-pointer items-center justify-center rounded-full border border-[#dde5d8] bg-white text-[#64745F] shadow-sm transition hover:border-[#c7ddb5] hover:bg-[#f2f6ee] hover:text-[#658354] dark:border-[#2f4a32] dark:bg-[#101912] dark:text-[#d6e8cf] dark:hover:bg-[#203423]"
+        title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+        aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+      >
+        <ToggleIcon className="size-4" />
+      </button>
+      <div className="flex flex-col">
+        <div className={cn('mb-2 flex items-center gap-3 py-1.5 transition-all duration-300', isExpanded ? 'justify-start px-3' : 'justify-center px-1')}>
+          <SitelyMark />
+          <div className={cn('min-w-0 overflow-hidden transition-all duration-300', isExpanded ? 'w-auto opacity-100' : 'h-0 w-0 opacity-0')}>
+            <div className="whitespace-nowrap text-[17px] font-extrabold tracking-normal text-[#102015] dark:text-[#edf7ee]">Sitely</div>
+          </div>
         </div>
-        {!collapsed && (
-          <button
-            type="button"
-            onClick={toggle}
-            title="Collapse sidebar"
-            className="flex size-[26px] shrink-0 items-center justify-center rounded-[7px] text-[#A8ACB4] transition hover:bg-[#F4F5F7] hover:text-[#4F5DF5]"
-          >
-            <ChevronsLeft className="size-[15px]" />
-          </button>
-        )}
+
+        <div className="mb-4 w-full border-b border-[#c7ddb5] dark:border-[#2f4a32]" />
+
+        <nav className="flex w-full flex-col gap-1">
+          {NAV_ITEMS.map((item) => {
+            const isActive = item.path === '/' ? pathname === '/' || pathname.startsWith('/websites') : pathname === item.path || pathname.startsWith(`${item.path}/`)
+
+            return (
+              <Link
+                key={item.id}
+                to={item.path}
+                className={cn(
+                  'flex items-center gap-3 rounded-xl py-2.5 text-[14px] font-medium transition-all duration-200',
+                  isActive
+                    ? 'bg-[#ddead1] text-[#658354] dark:bg-[#203423] dark:text-[#b6d7a8]'
+                    : 'text-[#64745F] hover:bg-[#ddead1]/60 hover:text-[#658354] dark:text-[#9fb49b] dark:hover:bg-[#203423] dark:hover:text-[#b6d7a8]',
+                  isExpanded ? 'justify-start px-4' : 'justify-center px-0',
+                )}
+                title={isExpanded ? undefined : item.label}
+              >
+                <item.icon className={cn('size-4 shrink-0 transition-transform duration-200', isActive ? 'text-[#658354]' : 'text-[#64745F]')} />
+                <span
+                  className={cn(
+                    'whitespace-nowrap transition-all duration-300',
+                    isExpanded ? 'w-auto translate-x-0 opacity-100' : 'pointer-events-none w-0 -translate-x-2 overflow-hidden opacity-0',
+                  )}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            )
+          })}
+        </nav>
       </div>
-
-      {/* Toggle button — below logo when collapsed */}
-      {collapsed && (
-        <div className="flex justify-center border-b border-[#E5E7EB] py-[10px]">
-          <button
-            type="button"
-            onClick={toggle}
-            title="Expand sidebar"
-            className="flex size-[28px] items-center justify-center rounded-[7px] text-[#A8ACB4] transition hover:bg-[#EEEFFE] hover:text-[#4F5DF5]"
-          >
-            <ChevronsRight className="size-[15px]" />
-          </button>
-        </div>
-      )}
-
-      {/* Menu */}
-      <div className={cn('mt-[10px] px-[8px]')}>
-        <SbItem
-          icon={<Globe className="size-[17px]" />} label="Websites" active={isWebsitesActive}
-          badge={overdueCount > 0 ? String(overdueCount) : undefined} collapsed={collapsed}
-          onClick={() => navigate({ to: '/', search: { page: 1, limit: 15, showFilters: false } })}
-        />
-        <SbItem icon={<Users className="size-[17px]" />} label="Clients" active={isClientsActive} collapsed={collapsed}
-          onClick={() => navigate({ to: '/clients', search: { page: 1, limit: 20 } })} />
+      <div className="flex flex-col gap-2">
+        <ThemeToggle compact={!isExpanded} />
+        <SidebarUserMenu isExpanded={isExpanded} />
       </div>
-
-      <div className="flex-1" />
-
-      {/* User bottom */}
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <button
-              type="button"
-              className={cn(
-                'flex cursor-pointer items-center border-t border-[#E5E7EB] transition hover:bg-[#F7F8FA]',
-                collapsed ? 'w-full justify-center px-0 py-[11px]' : 'gap-[10px] px-[11px] py-[11px]',
-              )}
-            />
-          }
-        >
-          <Avatar className="size-8 shrink-0 rounded-full">
-            <AvatarFallback className="rounded-full bg-[#4F5DF5] text-[12px] font-bold text-white">
-              {initials(user?.name)}
-            </AvatarFallback>
-          </Avatar>
-          {!collapsed && (
-            <>
-              <div className="min-w-0 flex-1 text-left">
-                <div className="truncate text-[12.5px] font-semibold text-[#11141A]">{user?.name ?? 'Actnos Admin'}</div>
-                <div className="text-[11px] capitalize text-[#8A8F98]">{(user?.role ?? 'owner').replace('_', ' ')}</div>
-              </div>
-              <ChevronUp className="size-[15px] shrink-0 text-[#A8ACB4]" />
-            </>
-          )}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-[200px] rounded-xl border border-[#E5E7EB] bg-white p-1.5 shadow-lg">
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              className="cursor-pointer gap-2 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[#11141A] focus:bg-[#F4F5F7]"
-              onClick={() => navigate({ to: '/settings' })}
-            >
-              <Settings className="size-4 text-[#8A8F98]" /> Settings
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              className="cursor-pointer gap-2 rounded-lg px-2 py-2 text-[12.5px] font-medium text-[#DC2626] focus:bg-[#FEF2F2] focus:text-[#DC2626]"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-            >
-              <LogOut className="size-4" />
-              {logoutMutation.isPending ? 'Signing out…' : 'Sign out'}
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </aside>
   )
 }
-
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
-function SbItem({
-  icon, label, active, badge, collapsed, onClick,
-}: {
-  icon: React.ReactNode
-  label: string
-  active: boolean
-  badge?: string
-  collapsed?: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={collapsed ? label : undefined}
-      className={cn(
-        'relative mb-[1px] flex w-full items-center rounded-[9px] transition-all duration-150',
-        collapsed ? 'justify-center px-0 py-[10px]' : 'gap-[10px] px-[11px] py-[9px]',
-        active ? 'bg-[#EEEFFE] font-semibold text-[#4F5DF5]' : 'text-[#5C6270] hover:bg-[#F7F8FA] hover:text-[#11141A]',
-      )}
-    >
-      <span className={cn('shrink-0', active ? 'text-[#4F5DF5]' : 'text-[#8A8F98]')}>{icon}</span>
-      {!collapsed && <span className="flex-1 text-left text-[13px] font-medium">{label}</span>}
-      {badge && !collapsed && (
-        <span className="rounded-[10px] bg-[#DC2626] px-[7px] py-[1px] text-[10.5px] font-bold text-white">{badge}</span>
-      )}
-      {badge && collapsed && (
-        <span className="absolute right-[8px] top-[8px] size-[7px] rounded-full bg-[#DC2626]" />
-      )}
-    </button>
-  )
-}
-

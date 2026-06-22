@@ -31,7 +31,7 @@ const nameLike = (field: string, max = 100) =>
 
 const schema = z.object({
   name: nameLike('Name'),
-  company: nameLike('Company', 150),
+  company: z.preprocess(emptyToUndefined, nameLike('Company', 150).optional()),
   phone: z.preprocess(
     emptyToUndefined,
     z.string()
@@ -39,8 +39,8 @@ const schema = z.object({
       .refine((v) => !/^(\d)\1{9}$/.test(v), 'Cannot be a repeated digit pattern')
       .optional(),
   ),
-  email: z.preprocess(emptyToUndefined, z.string({ message: 'Email is required' }).email('Invalid email')),
-  city: z.preprocess(emptyToUndefined, nameLike('Address').optional()),
+  email: z.preprocess(emptyToUndefined, z.string().email('Invalid email').optional()),
+  city: z.preprocess(emptyToUndefined, nameLike('City').optional()),
   isActive: z.boolean(),
 })
 
@@ -49,13 +49,13 @@ type FormValues = z.infer<typeof schema>
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface ClientData {
-  id: number
+  clientId: string
   name: string
   company: string | null
   phone: string | null
   email: string | null
   city: string | null
-  is_active: boolean
+  isActive: boolean
 }
 
 interface EditClientDialogProps {
@@ -69,8 +69,8 @@ interface EditClientDialogProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDeleted }: EditClientDialogProps) {
-  const updateMutation = useUpdateClient(client?.id ? String(client.id) : '')
-  const deleteMutation = useDeleteClient(client?.id ? String(client.id) : '')
+  const updateMutation = useUpdateClient(client?.clientId ?? '')
+  const deleteMutation = useDeleteClient(client?.clientId ?? '')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const form = useForm<FormValues>({
@@ -78,21 +78,22 @@ export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDele
     defaultValues: toDefaults(client),
   })
 
+  // Prefill whenever a different client is loaded into the dialog
   useEffect(() => {
     if (open && client) {
       form.reset(toDefaults(client))
       updateMutation.reset()
     }
-  }, [open, client?.id])
+  }, [open, client?.clientId])
 
   const handleSubmit = form.handleSubmit((values) => {
     if (!client) return
     updateMutation.mutate(
       {
         name: values.name.trim(),
-        company: values.company.trim(),
-        email: values.email.trim(),
+        company: values.company?.trim() || undefined,
         phone: values.phone?.trim() || undefined,
+        email: values.email?.trim() || undefined,
         city: values.city?.trim() || undefined,
         isActive: values.isActive,
       },
@@ -116,7 +117,6 @@ export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDele
   }
 
   const e = form.formState.errors
-  const isActive = form.watch('isActive')
 
   return (
     <>
@@ -124,18 +124,18 @@ export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDele
         <Dialog.Portal>
           <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
 
-          <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#E5E7EB] bg-white shadow-xl transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+          <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#e5ebe2] bg-white shadow-xl transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 dark:border-[#2f4a32] dark:bg-[#101912]">
 
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
-              <Dialog.Title className="text-lg font-bold text-[#11141A]">
+            <div className="flex items-center justify-between border-b border-[#f0f4ee] px-6 py-4 dark:border-[#2f4a32]/60">
+              <Dialog.Title className="text-lg font-bold text-[#101828] dark:text-[#edf7ee]">
                 Edit Client
               </Dialog.Title>
               <Dialog.Close
                 render={
                   <button
                     type="button"
-                    className="flex size-8 items-center justify-center rounded-lg text-[#8A8F98] transition hover:bg-[#F4F5F7] hover:text-[#11141A]"
+                    className="flex size-8 items-center justify-center rounded-lg text-[#64745F] transition hover:bg-[#f0f4ee] hover:text-[#101828] dark:hover:bg-[#203423] dark:hover:text-[#edf7ee]"
                   />
                 }
               >
@@ -146,13 +146,13 @@ export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDele
             {/* Body */}
             <form onSubmit={handleSubmit} className="px-6 py-5">
               {/* Section header */}
-              <div className="mb-5 flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#EEEFFE] text-[#4F5DF5]">
+              <div className="mb-5 flex items-center gap-3 border-b border-[#f0f4ee] pb-4 dark:border-[#2f4a32]/60">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#ddead1] text-[#658354] dark:bg-[#203423] dark:text-[#85e0a3]">
                   <Pencil className="size-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[#11141A]">Client Details</p>
-                  <p className="text-xs text-[#5C6270]">Update contact and company information.</p>
+                  <p className="text-sm font-bold text-[#101828] dark:text-[#edf7ee]">Client Details</p>
+                  <p className="text-xs text-[#64745F] dark:text-[#9fb49b]">Update contact and company information.</p>
                 </div>
               </div>
 
@@ -160,72 +160,72 @@ export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDele
                 {/* Row 1: Name + Company */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="grid gap-1.5">
-                    <label className="text-[11.5px] font-semibold text-[#374151]">
-                      Client Name <span className="text-[#DC2626]">*</span>
+                    <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">
+                      Client Name <span className="text-red-500">*</span>
                     </label>
                     <Input placeholder="Enter client name" {...form.register('name')} />
-                    {e.name ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.name.message}</p> : null}
+                    {e.name ? <p className="text-xs text-destructive">{e.name.message}</p> : null}
                   </div>
                   <div className="grid gap-1.5">
-                    <label className="text-[11.5px] font-semibold text-[#374151]">Company <span className="text-[#DC2626]">*</span></label>
-                    <Input placeholder="Enter company name" {...form.register('company')} />
-                    {e.company ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.company.message as string}</p> : null}
+                    <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Company</label>
+                    <Input placeholder="Enter company name (optional)" {...form.register('company')} />
+                    {e.company ? <p className="text-xs text-destructive">{e.company.message as string}</p> : null}
                   </div>
                 </div>
 
                 {/* Row 2: Phone + Email */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="grid gap-1.5">
-                    <label className="text-[11.5px] font-semibold text-[#374151]">Phone</label>
+                    <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Phone</label>
                     <div className="relative">
-                      <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9CA3AF]" />
+                      <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
                       <Input className="pl-9" placeholder="Enter 10-digit mobile number" {...form.register('phone')} />
                     </div>
-                    {e.phone ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.phone.message as string}</p> : null}
+                    {e.phone ? <p className="text-xs text-destructive">{e.phone.message as string}</p> : null}
                   </div>
                   <div className="grid gap-1.5">
-                    <label className="text-[11.5px] font-semibold text-[#374151]">Email <span className="text-[#DC2626]">*</span></label>
+                    <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Email</label>
                     <div className="relative">
-                      <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9CA3AF]" />
-                      <Input className="pl-9" type="email" placeholder="Enter email address" {...form.register('email')} />
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
+                      <Input className="pl-9" type="email" placeholder="Enter email address (optional)" {...form.register('email')} />
                     </div>
-                    {e.email ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.email.message as string}</p> : null}
+                    {e.email ? <p className="text-xs text-destructive">{e.email.message as string}</p> : null}
                   </div>
                 </div>
 
-                {/* Row 3: Address */}
+                {/* Row 3: City */}
                 <div className="grid gap-1.5">
-                  <label className="text-[11.5px] font-semibold text-[#374151]">Address</label>
+                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">City</label>
                   <div className="relative">
-                    <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9CA3AF]" />
-                    <Input className="pl-9" placeholder="Enter address (optional)" {...form.register('city')} />
+                    <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
+                    <Input className="pl-9" placeholder="Enter city (optional)" {...form.register('city')} />
                   </div>
-                  {e.city ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.city.message as string}</p> : null}
+                  {e.city ? <p className="text-xs text-destructive">{e.city.message as string}</p> : null}
                 </div>
 
-                {/* Row 4: Status toggle */}
-                <div className="flex items-center justify-between rounded-[10px] border border-[#E5E7EB] px-4 py-3">
+                {/* Row 4: Status */}
+                <div className="flex items-center justify-between rounded-xl border border-[#e5ebe2] px-4 py-3 dark:border-[#2f4a32]">
                   <div>
-                    <p className="text-[12.5px] font-semibold text-[#11141A]">Status</p>
-                    <p className="text-[11.5px] text-[#5C6270]">
-                      {isActive ? 'Client is active and visible in listings.' : 'Client is inactive and hidden from active views.'}
+                    <p className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Status</p>
+                    <p className="text-xs text-[#64745F] dark:text-[#9fb49b]">
+                      {form.watch('isActive') ? 'Client is active and visible in listings.' : 'Client is inactive and hidden from active views.'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-[11.5px] font-bold ${isActive ? 'text-[#059669]' : 'text-[#8A8F98]'}`}>
-                      {isActive ? 'Active' : 'Inactive'}
+                    <span className={`text-xs font-bold ${form.watch('isActive') ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#64745F] dark:text-[#9fb49b]'}`}>
+                      {form.watch('isActive') ? 'Active' : 'Inactive'}
                     </span>
                     <Switch
-                      checked={isActive}
+                      checked={form.watch('isActive')}
                       onCheckedChange={(checked) => form.setValue('isActive', checked, { shouldDirty: true })}
-                      className="data-checked:bg-[#4F5DF5]"
+                      className="data-checked:bg-emerald-500"
                     />
                   </div>
                 </div>
               </div>
 
               {updateMutation.isError ? (
-                <p className="mt-3 text-[12px] font-semibold text-[#DC2626]">{(updateMutation.error as Error).message}</p>
+                <p className="mt-3 text-sm text-destructive">{(updateMutation.error as Error).message}</p>
               ) : null}
 
               {/* Footer */}
@@ -233,7 +233,7 @@ export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDele
                 <Button
                   type="button"
                   variant="outline"
-                  className="gap-2 rounded-[9px] border-[#FECACA] text-[#DC2626] hover:bg-[#FEF2F2] hover:text-[#DC2626]"
+                  className="gap-2 rounded-xl border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
                   disabled={deleteMutation.isPending}
                   onClick={() => setShowDeleteConfirm(true)}
                 >
@@ -245,7 +245,7 @@ export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDele
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 min-w-24 rounded-[9px] border-[#E5E7EB] text-[#5C6270]"
+                    className="h-10 min-w-24 rounded-xl border-[#dde5d8] dark:border-[#2f4a32]"
                     onClick={() => onOpenChange(false)}
                   >
                     Cancel
@@ -253,7 +253,7 @@ export function EditClientDialog({ open, onOpenChange, client, onUpdated, onDele
                   <Button
                     type="submit"
                     disabled={updateMutation.isPending}
-                    className="h-10 gap-2 rounded-[9px] bg-[#4F5DF5] px-5 text-[13px] font-semibold text-white hover:bg-[#3F4DE0]"
+                    className="h-10 gap-2 rounded-xl bg-[#658354] px-5 font-bold text-white hover:bg-[#4b6043]"
                   >
                     <Pencil className="size-4" />
                     {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
@@ -285,6 +285,6 @@ function toDefaults(client: ClientData | null): FormValues {
     phone: client?.phone ?? '',
     email: client?.email ?? '',
     city: client?.city ?? '',
-    isActive: client?.is_active ?? true,
+    isActive: client?.isActive ?? true,
   }
 }

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, MoreVertical, Eye, Pencil, RefreshCw, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Clock, Globe, MoreVertical, Pencil, RefreshCw, Trash2, Eye } from 'lucide-react'
+import { Button } from '#/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { NoResults } from '#/components/ui/no-results'
 import { PageSizeSelector } from '#/components/ui/page-size-selector'
-import { formatCurrency, formatDate } from '#/lib/format'
+import { formatDate } from '#/lib/format'
 import { cn } from '#/lib/utils'
-import { StatusPill } from './status-badges'
+import { MaintenanceBadge, StatusPill } from './status-badges'
 import { WebsiteEditDialog } from './website-edit-dialog'
 import { WebsiteUpdateDialog } from './website-update-dialog'
 import type { Website } from './types'
@@ -27,75 +28,74 @@ interface WebsitesTableProps {
   dueSoonDays?: number
 }
 
-// 8 columns: Project | Client | Type | Domain | Maintenance | Next Due | Website | Actions
-const gridClass = 'grid grid-cols-[1.7fr_1fr_1fr_1.6fr_1fr_1.5fr_90px_50px]'
-
-function rowPriority(site: Website): number {
-  if (site.is_maintenance_overdue) return 0
-  if (site.maintenance_status === 'Due Soon') return 1
-  if (site.website_status === 'Live') return 2
-  if (site.website_status === 'In Progress') return 3
-  return 4
-}
+const gridClass = 'grid grid-cols-[44px_2fr_1fr_0.65fr_0.9fr_1fr_0.9fr_1.1fr_64px]'
 
 export function WebsitesTable({
-  websites, isLoading, isError, error,
-  sortBy, sortOrder, onSortChange,
-  pagination, pageSize, onPageSizeChange, onPageChange,
-  onDelete, dueSoonDays = 30,
+  websites,
+  isLoading,
+  isError,
+  error,
+  sortBy,
+  sortOrder,
+  onSortChange,
+  pagination,
+  pageSize,
+  onPageSizeChange,
+  onPageChange,
+  onDelete,
+  dueSoonDays = 30,
 }: WebsitesTableProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      {/* Header */}
-      <div className={cn(gridClass, 'shrink-0 border-b border-[#E5E7EB] bg-[#FAFBFC]')}>
-        <Th>Project</Th>
-        <Th>Client</Th>
-        <SortTh field="siteType" label="Type" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
-        <Th>Domain</Th>
-        <Th>Maintenance</Th>
-        <SortTh field="renewalDate" label="Next Due" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
-        <Th center>Website</Th>
-        <Th />
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#c7ddb5] bg-white shadow-sm dark:border-[#2f4a32] dark:bg-[#101912]">
+      {/* Header — uses same grid, padded right to match scrollbar */}
+      <div className={cn(gridClass, 'shrink-0 border-b border-[#c7ddb5] bg-[#ddead1] pr-[var(--scrollbar-w,0px)] dark:border-[#2f4a32] dark:bg-[#203423]')}>
+        <HeaderCell center />
+        <HeaderCell>Project Name</HeaderCell>
+        <HeaderCell>Client</HeaderCell>
+        <SortableHeaderCell field="siteType" label="Type" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
+        <SortableHeaderCell field="platform" label="Platform" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
+        <SortableHeaderCell field="websiteStatus" label="Website Status" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
+        <SortableHeaderCell field="maintenanceStatus" label="Maintenance" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
+        <SortableHeaderCell field="renewalDate" label="Renewal Date" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
+        <HeaderCell center>Action</HeaderCell>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading ? (
           <StateRow>Loading...</StateRow>
         ) : isError ? (
-          <StateRow className="text-[#DC2626]">{error?.message ?? 'Something went wrong.'}</StateRow>
+          <StateRow className="text-destructive">{error?.message ?? 'Something went wrong.'}</StateRow>
         ) : !websites || websites.length === 0 ? (
           <NoResults message="No websites found." />
         ) : (
-          [...websites]
-            .sort((a, b) => rowPriority(a) - rowPriority(b))
-            .map((site) => <WebsiteRow key={site.id} site={site} onDelete={onDelete} dueSoonDays={dueSoonDays} />)
+          websites.map((site) => <WebsiteRow key={site.websiteId} site={site} onDelete={onDelete} dueSoonDays={dueSoonDays} />)
         )}
       </div>
 
       {pagination ? (
-        <footer className="flex shrink-0 items-center justify-between border-t border-[#E5E7EB] bg-white px-5 py-3 text-sm text-[#8A8F98]">
+        <footer className="flex shrink-0 items-center justify-between border-t border-[#c7ddb5] bg-white px-5 py-3 text-sm text-[#64745F] dark:border-[#2f4a32] dark:bg-[#101912] dark:text-[#b7c8b3]">
           <PageSizeSelector value={pageSize} onChange={onPageSizeChange} total={pagination.total} />
-          <div className="flex items-center gap-3">
-            <span className="text-[12px] text-[#8A8F98]">
-              Page <span className="font-semibold text-[#5C6270]">{pagination.page}</span> of <span className="font-semibold text-[#5C6270]">{pagination.totalPages}</span>
-            </span>
-            <div className="flex items-center gap-1.5">
-            <button type="button" disabled={pagination.page <= 1} onClick={() => onPageChange(pagination.page - 1)}
-              className="flex size-[29px] items-center justify-center rounded-[7px] text-[#8A8F98] transition hover:bg-[#F4F5F7] disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Previous page">
-              <ChevronLeft className="size-4" />
-            </button>
-            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((n) => (
-              <button key={n} type="button" onClick={() => onPageChange(n)}
-                className={cn('flex size-[29px] items-center justify-center rounded-[7px] text-[12px] font-semibold transition',
-                  n === pagination.page ? 'bg-[#4F5DF5] text-white' : 'text-[#5C6270] hover:bg-[#F4F5F7]')}>
-                {n}
-              </button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon-lg" disabled={pagination.page <= 1} onClick={() => onPageChange(pagination.page - 1)} aria-label="Previous page">
+              <ChevronLeft />
+            </Button>
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNumber) => (
+              <Button
+                key={pageNumber}
+                variant={pageNumber === pagination.page ? 'default' : 'ghost'}
+                size="icon-lg"
+                className={cn(
+                  'rounded-lg border border-transparent',
+                  pageNumber === pagination.page && 'border-[#08712f] bg-white text-[#08712f] hover:bg-[#eef7ed] dark:bg-[#101912]',
+                )}
+                onClick={() => onPageChange(pageNumber)}
+              >
+                {pageNumber}
+              </Button>
             ))}
-            <button type="button" disabled={pagination.page >= pagination.totalPages} onClick={() => onPageChange(pagination.page + 1)}
-              className="flex size-[29px] items-center justify-center rounded-[7px] text-[#8A8F98] transition hover:bg-[#F4F5F7] disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Next page">
-              <ChevronRight className="size-4" />
-            </button>
-            </div>
+            <Button variant="outline" size="icon-lg" disabled={pagination.page >= pagination.totalPages} onClick={() => onPageChange(pagination.page + 1)} aria-label="Next page">
+              <ChevronRight />
+            </Button>
           </div>
         </footer>
       ) : null}
@@ -103,217 +103,210 @@ export function WebsitesTable({
   )
 }
 
-// ── Row ───────────────────────────────────────────────────────────────────────
-
 function WebsiteRow({ site, onDelete, dueSoonDays }: { site: Website; onDelete?: (site: Website) => void; dueSoonDays: number }) {
   const navigate = useNavigate()
   const [updateOpen, setUpdateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
 
-  const isOverdue = site.is_maintenance_overdue
-  const isDueSoon = !isOverdue && site.maintenance_status === 'Due Soon'
-
   return (
     <div
       className={cn(
         gridClass,
-        'min-h-[60px] cursor-pointer items-center border-b border-[#EEF0F2] text-[13px] transition-colors',
-        isOverdue ? 'bg-[#FFF8F7] hover:bg-[#FEF0EE]' : isDueSoon ? 'bg-[#FFFCF4] hover:bg-[#FEF7E6]' : 'hover:bg-[#F7F8FA]',
+        'min-h-[68px] items-center border-b border-[#c7ddb5]/40 text-[13px] hover:bg-[#ddead1]/30 dark:border-[#2f4a32]/70 dark:hover:bg-[#203423]/70',
       )}
-      onClick={() => navigate({ to: '/websites/$websiteId', params: { websiteId: String(site.id) } })}
     >
-      {/* Project */}
-      <Cell>
-        <div className="flex items-center gap-[11px]">
-          <div className={cn('flex size-[34px] shrink-0 items-center justify-center rounded-[10px]',
-            isOverdue ? 'bg-[#FEF2F2]' : isDueSoon ? 'bg-[#FEF3C7]' : 'bg-[#EFF6FF]')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={cn('size-[17px]', isOverdue ? 'text-[#DC2626]' : isDueSoon ? 'text-[#D97706]' : 'text-[#3B82F6]')}>
-              <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <div className="truncate font-semibold text-[#11141A]">{site.project_name}</div>
-            {site.url ? <div className="truncate text-[11.5px] text-[#8A8F98]">{site.url.replace(/^https?:\/\//, '')}</div> : null}
-          </div>
-        </div>
+      <Cell className="flex items-center justify-center">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[#08712f] dark:bg-[#163c25] dark:text-[#85e0a3]">
+          <Globe className="size-4" />
+        </span>
       </Cell>
 
-      {/* Client */}
-      <Cell><span className="truncate text-[#5C6270]">{site.client_name}</span></Cell>
-
-      {/* Type: "build_type / platform" */}
       <Cell>
-        <div className="min-w-0">
-          <div className="truncate font-semibold text-[#3D4250]">
-            {[site.build_type || site.site_type, site.platform].filter(Boolean).join(' / ')}
-          </div>
-        </div>
+        <div className="truncate font-bold text-[#102315] dark:text-[#edf7ee]">{site.projectName}</div>
+        {site.url ? <div className="truncate text-xs font-medium text-[#64745F] dark:text-[#9fb49b]">{site.url.replace(/^https?:\/\//, '')}</div> : null}
       </Cell>
 
-      {/* Domain */}
-      <Cell><DomainCell site={site} dueSoonDays={dueSoonDays} /></Cell>
+      <Cell className="truncate font-medium text-[#334155] dark:text-[#b7c8b3]">{site.clientName}</Cell>
+      <Cell className="truncate font-medium capitalize text-[#334155] dark:text-[#b7c8b3]">{site.siteType}</Cell>
 
-      {/* Maintenance */}
-      <Cell>
-        {site.maintenance_amount ? (
-          <div>
-            <div className="font-bold text-[#3D4250]">{formatCurrency(site.maintenance_amount)}<span className="font-normal text-[#8A8F98]"> / {site.billing_cycle === 'yearly' ? 'y' : 'mo'}</span></div>
-            <div className="text-[11px] text-[#8A8F98] capitalize">{site.billing_cycle ?? 'Monthly'}</div>
-          </div>
-        ) : (
-          <span className="text-[#C7CAD1]">—</span>
-        )}
+      <Cell className="font-medium capitalize text-[#334155] dark:text-[#b7c8b3]">
+        <span className="inline-flex items-center gap-2">
+          <PlatformMark platform={site.platform} />
+          {site.platform}
+        </span>
       </Cell>
 
-      {/* Next Due */}
-      <Cell><NextDueCell site={site} dueSoonDays={dueSoonDays} /></Cell>
+      <Cell>
+        <StatusPill label={site.websiteStatus} />
+      </Cell>
 
-      {/* Website status */}
-      <Cell className="justify-center"><StatusPill label={site.website_status} /></Cell>
+      <Cell>
+        <MaintenanceBadge label={site.maintenanceStatus} />
+      </Cell>
 
-      {/* Actions */}
-      <Cell className="justify-center pr-2" onClick={(e) => e.stopPropagation()}>
+      <Cell>
+        <RenewalDateCell renewalDate={site.renewalDate} isOverdue={site.isOverdue} dueSoonDays={dueSoonDays} />
+      </Cell>
+
+      {/* Actions cell — wider + right-aligned so button is never clipped */}
+      <Cell className="flex items-center justify-end pr-4">
         <DropdownMenu>
-          <DropdownMenuTrigger render={
-            <button type="button" className="flex size-7 shrink-0 items-center justify-center rounded-[7px] text-[#A8ACB4] transition hover:bg-[#F4F5F7] hover:text-[#3D4250]" aria-label={`Actions for ${site.project_name}`} />
-          }>
+          <DropdownMenuTrigger
+            render={
+              <button
+                type="button"
+                className="flex size-7 shrink-0 items-center justify-center rounded-lg text-[#64748b] transition hover:bg-[#e8f0e4] hover:text-[#102315] dark:hover:bg-[#203423] dark:hover:text-[#edf7ee]"
+                aria-label={`Actions for ${site.projectName}`}
+              />
+            }
+          >
             <MoreVertical className="size-4" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="w-[165px] rounded-[10px] border border-[#E5E7EB] bg-white p-1 shadow-[0_10px_30px_rgba(17,20,26,.12)]">
+
+          <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="w-40 rounded-xl border border-[#dde5d8] bg-white p-1 shadow-lg dark:border-[#2f4a32] dark:bg-[#132018]">
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#3D4250] focus:bg-[#F4F5F7]"
-                onClick={() => navigate({ to: '/websites/$websiteId', params: { websiteId: String(site.id) } })}>
-                <Eye className="size-3.5 text-[#8A8F98]" /> View
+              <DropdownMenuItem
+                className="cursor-pointer gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-[#102315] focus:bg-[#f2f6ee] dark:text-[#edf7ee] dark:focus:bg-[#203423]"
+                onClick={() => navigate({ to: '/websites/$websiteId', params: { websiteId: site.websiteId } })}
+              >
+                <Eye className="size-3.5 text-[#64745F]" />
+                View
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#3D4250] focus:bg-[#F4F5F7]"
-                onClick={() => setUpdateOpen(true)}>
-                <RefreshCw className="size-3.5 text-[#8A8F98]" /> Update
+              <DropdownMenuItem
+                className="cursor-pointer gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-[#102315] focus:bg-[#f2f6ee] dark:text-[#edf7ee] dark:focus:bg-[#203423]"
+                onClick={() => setUpdateOpen(true)}
+              >
+                <RefreshCw className="size-3.5 text-[#64745F]" />
+                Update
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#3D4250] focus:bg-[#F4F5F7]"
-                onClick={() => setEditOpen(true)}>
-                <Pencil className="size-3.5 text-[#8A8F98]" /> Edit
+              <DropdownMenuItem
+                className="cursor-pointer gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-[#102315] focus:bg-[#f2f6ee] dark:text-[#edf7ee] dark:focus:bg-[#203423]"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="size-3.5 text-[#64745F]" />
+                Edit
               </DropdownMenuItem>
             </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#DC2626] focus:bg-[#FEF2F2] focus:text-[#DC2626]"
-                onClick={() => onDelete?.(site)}>
-                <Trash2 className="size-3.5" /> Delete
+              <DropdownMenuItem
+                className="cursor-pointer gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-red-600 focus:bg-red-50 focus:text-red-700 dark:focus:bg-red-950/30"
+                onClick={() => onDelete?.(site)}
+              >
+                <Trash2 className="size-3.5" />
+                Delete
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <WebsiteUpdateDialog websiteId={String(site.id)} open={updateOpen} onOpenChange={setUpdateOpen} />
-        <WebsiteEditDialog websiteId={String(site.id)} open={editOpen} onOpenChange={setEditOpen} />
+        <WebsiteUpdateDialog websiteId={site.websiteId} open={updateOpen} onOpenChange={setUpdateOpen} />
+        <WebsiteEditDialog websiteId={site.websiteId} open={editOpen} onOpenChange={setEditOpen} />
       </Cell>
     </div>
   )
 }
 
-// ── Domain Cell ───────────────────────────────────────────────────────────────
-
-function DomainCell({ site, dueSoonDays }: { site: Website; dueSoonDays: number }) {
-  const handledBy = site.domain_handled_by
-  if (!handledBy && !site.domain_name) return <span className="text-[#C7CAD1]">—</span>
-
-  const handledByLabel = handledBy === 'our_side' ? 'Our side' : handledBy === 'client_side' ? 'Client side' : '—'
-  const diff = site.domain_renewal_date ? dayDiff(site.domain_renewal_date) : null
-  const isDomainOverdue = diff !== null && diff < 0
-  const isDomainDueSoon = diff !== null && diff >= 0 && diff <= dueSoonDays
-
-  return (
-    <div className="min-w-0">
-      <div className={cn('truncate font-semibold text-[#3D4250]', isDomainOverdue && 'text-[#DC2626]', isDomainDueSoon && !isDomainOverdue && 'text-[#D97706]')}>
-        {handledByLabel}{site.domain_provider ? ` · ${site.domain_provider}` : ''}
-      </div>
-      {site.domain_renewal_date ? (
-        <div className="text-[11px] text-[#8A8F98]">{formatDate(site.domain_renewal_date)}</div>
-      ) : (
-        <div className="text-[11px] text-[#8A8F98]">Renewal unknown</div>
-      )}
-      {isDomainOverdue && diff !== null ? (
-        <div className="text-[11px] font-semibold text-[#DC2626]">overdue by {Math.abs(diff)} days</div>
-      ) : isDomainDueSoon && diff !== null ? (
-        <div className="text-[11px] font-semibold text-[#D97706]">due in {diff} days</div>
-      ) : null}
-    </div>
-  )
+function PlatformMark({ platform }: { platform: string }) {
+  if (platform.toLowerCase() === 'wpx') return <span className="text-base font-black text-blue-600">W</span>
+  return <span className="size-4 rotate-45 border-2 border-black dark:border-[#edf7ee]" />
 }
-
-// ── Next Due Cell ─────────────────────────────────────────────────────────────
-
-function NextDueCell({ site, dueSoonDays }: { site: Website; dueSoonDays: number }) {
-  const renewalDate = site.current_billing_due_date
-  if (!renewalDate) return <span className="text-[#C7CAD1]">—</span>
-
-  const diff = dayDiff(renewalDate)
-  const isOverdue = site.is_maintenance_overdue
-  const isDueSoon = !isOverdue && diff >= 0 && diff <= dueSoonDays
-
-  let iconBg = 'bg-[#059669]'
-  let iconContent = '✓'
-  let dateClr = 'text-[#059669]'
-  if (isOverdue) { iconBg = 'bg-[#DC2626]'; iconContent = '!'; dateClr = 'text-[#DC2626]' }
-  else if (isDueSoon) { iconBg = 'bg-[#D97706]'; iconContent = '⏳'; dateClr = 'text-[#D97706]' }
-
-  return (
-    <div className="flex items-start gap-2">
-      <div className={cn('mt-0.5 flex size-[19px] shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white', iconBg)}>
-        {iconContent}
-      </div>
-      <div className="min-w-0">
-        <div className={cn('font-bold', dateClr)}>{formatDate(renewalDate)}</div>
-        {isOverdue ? (
-          <div className="text-[10.5px] font-semibold text-[#DC2626]">overdue by {Math.abs(diff)} {Math.abs(diff) === 1 ? 'day' : 'days'}</div>
-        ) : isDueSoon ? (
-          <div className="text-[10.5px] font-semibold text-[#D97706]">due in {diff} {diff === 1 ? 'day' : 'days'}</div>
-        ) : (
-          <div className="text-[10.5px] text-[#8A8F98]">in {diff} days</div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
-function dayDiff(dateStr: string | null | undefined): number {
-  if (!dateStr) return 0
-  const now = new Date(); now.setHours(0, 0, 0, 0)
-  const due = new Date(dateStr); due.setHours(0, 0, 0, 0)
+function dayDiff(renewalDate: string | null | undefined): number {
+  if (!renewalDate) return 0
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const due = new Date(renewalDate)
+  due.setHours(0, 0, 0, 0)
   return Math.round((due.getTime() - now.getTime()) / MS_PER_DAY)
 }
 
-function Th({ children, center }: { children?: React.ReactNode; center?: boolean }) {
-  return (
-    <div className={cn('flex h-12 min-w-0 items-center overflow-hidden px-3 text-[11px] font-semibold uppercase tracking-[.03em] text-[#8A8F98]', center && 'justify-center')}>
-      {children}
-    </div>
-  )
+function RenewalDateCell({ renewalDate, isOverdue, dueSoonDays }: { renewalDate: string | null | undefined; isOverdue?: boolean; dueSoonDays: number }) {
+  if (!renewalDate) return <span className="text-[#9fb49b]">—</span>
+
+  const diff = dayDiff(renewalDate)
+  const dueSoon = !isOverdue && diff >= 0 && diff <= dueSoonDays
+
+  if (isOverdue) {
+    const overdueDays = Math.abs(diff)
+    return (
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="size-4 shrink-0 text-red-500" />
+        <div className="flex flex-col">
+          <span className="font-bold text-red-600 dark:text-red-400">{formatDate(renewalDate)}</span>
+          <span className="text-[10px] font-bold text-red-500 dark:text-red-400">
+            by {overdueDays} {overdueDays === 1 ? 'day' : 'days'}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  if (dueSoon) {
+    return (
+      <div className="flex items-center gap-2">
+        <Clock className="size-4 shrink-0 text-yellow-500" />
+        <div className="flex flex-col">
+          <span className="font-bold text-yellow-600 dark:text-yellow-400">{formatDate(renewalDate)}</span>
+          <span className="text-[10px] font-bold text-yellow-500 dark:text-yellow-400">
+            in {diff} {diff === 1 ? 'day' : 'days'}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  return <span className="font-bold text-[#102315] dark:text-[#edf7ee]">{formatDate(renewalDate)}</span>
 }
 
-function SortTh({ field, label, sortBy, sortOrder, onSort }: { field: string; label: string; sortBy?: string; sortOrder?: 'asc' | 'desc'; onSort: (f: string) => void }) {
+function SortableHeaderCell({
+  field,
+  label,
+  sortBy,
+  sortOrder,
+  onSort,
+}: {
+  field: string
+  label: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  onSort: (field: string) => void
+}) {
   const active = sortBy === field
   return (
-    <div className="flex h-12 min-w-0 items-center overflow-hidden px-3">
-      <button type="button" onClick={() => onSort(field)}
-        className={cn('inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[.03em] transition',
-          active ? 'text-[#4F5DF5]' : 'text-[#8A8F98] hover:text-[#3D4250]')}>
+    <div className="flex h-14 min-w-0 items-center overflow-hidden px-2 py-2">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider text-[#3F6F39] transition hover:text-[#102315] dark:text-[#b6d7a8] dark:hover:text-[#edf7ee]"
+      >
         {label}
-        <span className="text-[10px]">{active ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}</span>
+        {active ? (
+          sortOrder === 'asc' ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />
+        ) : (
+          <ArrowUpDown className="size-3.5 opacity-50" />
+        )}
       </button>
     </div>
   )
 }
 
-function Cell({ children, className, onClick }: { children?: React.ReactNode; className?: string; onClick?: (e: React.MouseEvent) => void }) {
-  return <div className={cn('flex min-w-0 items-center overflow-hidden px-3 py-2', className)} onClick={onClick}>{children}</div>
+function HeaderCell({ children, center }: { children?: React.ReactNode; center?: boolean }) {
+  return (
+    <div className={cn('flex h-14 min-w-0 items-center overflow-hidden px-2 py-2 text-[11px] font-extrabold uppercase tracking-wider text-[#3F6F39] dark:text-[#b6d7a8]', center && 'justify-center')}>
+      {children}
+    </div>
+  )
+}
+
+function Cell({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={cn('min-w-0 overflow-hidden px-2 py-2', className)}>{children}</div>
 }
 
 function StateRow({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('flex h-40 items-center justify-center text-[#8A8F98] text-[13px]', className)}>{children}</div>
+  return <div className={cn('flex h-40 items-center justify-center text-[#64745F]', className)}>{children}</div>
 }

@@ -7,39 +7,18 @@ export class ApiError extends Error {
   code?: string
   status?: number
   errors?: string[]
-  fieldErrors: Record<string, string>
 
   constructor(message: string, code?: string, status?: number, errors?: string[]) {
     super(message)
     this.code = code
     this.status = status
     this.errors = errors
-    this.fieldErrors = parseFieldErrors(errors)
   }
 }
-
-// Parses ["requestedDate Required", "amount Must be positive"]
-// → { requestedDate: "Required", amount: "Must be positive" }
-function parseFieldErrors(errors?: string[]): Record<string, string> {
-  if (!errors?.length) return {}
-  const result: Record<string, string> = {}
-  for (const entry of errors) {
-    const spaceIdx = entry.indexOf(' ')
-    if (spaceIdx === -1) {
-      result[entry] = entry
-    } else {
-      const key = entry.slice(0, spaceIdx)
-      const msg = entry.slice(spaceIdx + 1)
-      result[key] = msg
-    }
-  }
-  return result
-}
-
 
 interface TokenPair {
-  access_token: string
-  refresh_token?: string
+  accessToken: string
+  refreshToken?: string
 }
 
 type QueueEntry = { resolve: () => void; reject: (err: unknown) => void }
@@ -98,8 +77,8 @@ async function performRefresh(): Promise<boolean> {
   if (!res.ok || !json.success) return false
 
   const tokens = json.data as TokenPair
-  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token)
-  if (tokens.refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
+  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken)
+  if (tokens.refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken)
   return true
 }
 
@@ -109,7 +88,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}, hasRe
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+      'Content-Type': 'application/json',
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
     },

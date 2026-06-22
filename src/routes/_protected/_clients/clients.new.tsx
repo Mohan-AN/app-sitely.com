@@ -24,7 +24,7 @@ function NewClientPage() {
       </header>
 
       <main className="flex flex-1 flex-col gap-4 p-6">
-        <ClientForm onCreated={(client) => navigate({ to: '/clients/$clientId', params: { clientId: String(client.id) } })} />
+        <ClientForm onCreated={(client) => navigate({ to: '/clients/$clientId', params: { clientId: client.clientId } })} />
       </main>
     </div>
   )

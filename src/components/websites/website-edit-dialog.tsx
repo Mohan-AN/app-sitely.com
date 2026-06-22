@@ -48,7 +48,7 @@ function EditDialogContent({ websiteId, onClose }: { websiteId: string; onClose:
             Edit Website
           </Dialog.Title>
           <Dialog.Description className="mt-0.5 text-sm text-[#64745F] dark:text-[#9fb49b]">
-            {website ? website.project_name : 'Update website information and settings.'}
+            {website ? website.projectName : 'Update website information and settings.'}
           </Dialog.Description>
         </div>
         <Dialog.Close
@@ -88,7 +88,7 @@ function EditDialogContent({ websiteId, onClose }: { websiteId: string; onClose:
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         title="Delete Website"
-        description={`Are you sure you want to delete "${website?.project_name}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${website?.projectName}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDeleteConfirm}
         isPending={deleteMutation.isPending}

@@ -1,15 +1,3 @@
-export function formatCurrency(value: string | null | undefined): string {
-  if (!value) return '—'
-  const num = parseFloat(value)
-  if (isNaN(num)) return '—'
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num)
-}
-
 export function formatDate(dateString: string | null): string {
   if (!dateString) return '—'
   const date = new Date(dateString)

@@ -28,7 +28,7 @@ const optionalNameLike = (field: string, max = 100) => nameLike(field, max).opti
 
 const clientFormSchema = z.object({
   name: nameLike('Name'),
-  company: nameLike('Company', 150),
+  company: optionalNameLike('Company', 150),
   phone: z.preprocess(
     emptyToUndefined,
     z.string()
@@ -36,8 +36,8 @@ const clientFormSchema = z.object({
       .refine((v) => !/^(\d)\1{9}$/.test(v), 'Cannot be a repeated digit pattern')
       .optional(),
   ),
-  email: z.preprocess(emptyToUndefined, z.string({ message: 'Email is required' }).email('Invalid email')),
-  city: optionalNameLike('Address'),
+  email: z.preprocess(emptyToUndefined, z.string().email('Invalid email').optional()),
+  city: optionalNameLike('City'),
 })
 
 type ClientFormValues = z.infer<typeof clientFormSchema>
@@ -76,9 +76,9 @@ function getDefaultValues(client?: ClientDetail): ClientFormValues {
 function toPayload(values: ClientFormValues): ClientInput {
   return {
     name: values.name.trim(),
-    company: values.company.trim(),
-    email: values.email.trim(),
+    company: values.company?.trim() || undefined,
     phone: values.phone?.trim() || undefined,
+    email: values.email?.trim() || undefined,
     city: values.city?.trim() || undefined,
   }
 }
@@ -115,7 +115,7 @@ export function ClientForm(props: ClientFormProps) {
   const client = isEdit ? props.client : undefined
 
   const createMutation = useCreateClient()
-  const updateMutation = useUpdateClient(client?.id ? String(client.id) : '')
+  const updateMutation = useUpdateClient(client?.clientId ?? '')
   const mutation = isEdit ? updateMutation : createMutation
 
   const form = useForm<ClientFormValues>({
@@ -158,11 +158,11 @@ export function ClientForm(props: ClientFormProps) {
 
           {/* Row 2: Company + City */}
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Company" required error={form.formState.errors.company?.message}>
+            <Field label="Company" error={form.formState.errors.company?.message}>
               <Input placeholder="e.g. Acme Pvt Ltd" {...form.register('company')} />
             </Field>
-            <Field label="Address" error={form.formState.errors.city?.message}>
-              <Input placeholder="e.g. 123 MG Road, Bengaluru" {...form.register('city')} />
+            <Field label="City" error={form.formState.errors.city?.message}>
+              <Input placeholder="e.g. Bengaluru" {...form.register('city')} />
             </Field>
           </div>
 
@@ -171,7 +171,7 @@ export function ClientForm(props: ClientFormProps) {
             <Field label="Phone" error={form.formState.errors.phone?.message}>
               <Input placeholder="9876543210" {...form.register('phone')} />
             </Field>
-            <Field label="Email" required error={form.formState.errors.email?.message}>
+            <Field label="Email" error={form.formState.errors.email?.message}>
               <Input type="email" placeholder="client@example.com" {...form.register('email')} />
             </Field>
           </div>
