@@ -1,11 +1,11 @@
 import { apiFetch } from './api'
 
 export interface CurrentUser {
-  userId: string
+  user_id: string
   name: string
   email: string
   role: string
-  isActive: boolean
+  is_active: boolean
 }
 
 export const AUTH_ME_QUERY_KEY = ['auth', 'me'] as const
@@ -21,5 +21,7 @@ export const authMeQueryOptions = {
   staleTime: AUTH_ME_STALE_TIME,
   gcTime: 30 * 60 * 1000,
   retry: false,
+  refetchOnMount: false,
   refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
 } as const

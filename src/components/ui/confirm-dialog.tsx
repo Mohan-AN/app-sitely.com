@@ -28,7 +28,7 @@ export function ConfirmDialog({
         <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
 
         {/* Panel */}
-        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#e5ebe2] bg-white p-6 shadow-xl transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 dark:border-[#2f4a32] dark:bg-[#132018]">
+        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-xl transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 dark:border-[#1e2244] dark:bg-[#181b2d]">
 
           {/* Icon */}
           <div className="mb-4 flex size-11 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/30">
@@ -50,7 +50,7 @@ export function ConfirmDialog({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-9 min-w-20 rounded-lg border-[#dde5d8] dark:border-[#2f4a32]"
+                  className="h-9 min-w-20 rounded-lg border-[#E5E7EB] dark:border-[#1e2244]"
                 />
               }
             >

@@ -9,14 +9,16 @@ export function listClientOptions(search?: string) {
   return apiFetch<Paginated<ClientOption>>(`/clients?${params.toString()}`)
 }
 
-export function listClients(filters: ClientsFilters, page: number, limit = 20) {
+export async function listClients(filters: ClientsFilters, page: number, limit = 20) {
   const params = new URLSearchParams()
   params.set('page', String(page))
   params.set('limit', String(limit))
   if (filters.search) params.set('search', filters.search)
   if (filters.sortBy) params.set('sortBy', filters.sortBy)
   if (filters.sortOrder) params.set('sortOrder', filters.sortOrder)
-  return apiFetch<Paginated<ClientWithCount>>(`/clients?${params.toString()}`)
+  const raw = await apiFetch<Paginated<ClientWithCount> & { pagination: { total_pages?: number } }>(`/clients?${params.toString()}`)
+  const p = raw.pagination
+  return { ...raw, pagination: { ...p, totalPages: p.totalPages ?? p.total_pages ?? 1 } }
 }
 
 export function createClient(input: ClientInput) {
@@ -26,17 +28,17 @@ export function createClient(input: ClientInput) {
   })
 }
 
-export function getClient(clientId: string) {
-  return apiFetch<ClientDetail>(`/clients/${clientId}`)
+export function getClient(id: string) {
+  return apiFetch<ClientDetail>(`/clients/${id}`)
 }
 
-export function updateClient(clientId: string, input: ClientInput) {
-  return apiFetch<Client>(`/clients/${clientId}`, {
+export function updateClient(id: string, input: ClientInput) {
+  return apiFetch<Client>(`/clients/${id}`, {
     method: 'PUT',
     body: JSON.stringify(input),
   })
 }
 
-export function deleteClient(clientId: string) {
-  return apiFetch<void>(`/clients/${clientId}`, { method: 'DELETE' })
+export function deleteClient(id: string) {
+  return apiFetch<void>(`/clients/${id}`, { method: 'DELETE' })
 }

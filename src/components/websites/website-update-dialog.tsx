@@ -5,9 +5,10 @@ import { Button } from '#/components/ui/button'
 import { ConfirmDialog } from '#/components/ui/confirm-dialog'
 import { Input } from '#/components/ui/input'
 import { Skeleton } from '#/components/ui/skeleton'
-import { useUpdateWebsite, useWebsite } from '#/hooks/use-websites'
+import { useCurrentBillingId, useUpdateWebsite, useWebsite } from '#/hooks/use-websites'
+import { useRecordPayment } from '#/hooks/use-billing'
 import { cn } from '#/lib/utils'
-import type { UpdateWebsiteInput } from './types'
+import type { UpdateWebsiteInput, WebsiteAction } from './types'
 
 interface WebsiteUpdateDialogProps {
   websiteId: string
@@ -28,17 +29,41 @@ export function WebsiteUpdateDialog({ websiteId, open, onOpenChange }: WebsiteUp
   )
 }
 
+function getEffectiveActions(allowedActions: WebsiteAction[], websiteStatus: string, maintenanceStatus: string): WebsiteAction[] {
+  const isOnHold = websiteStatus === 'On Hold'
+  const actions = allowedActions.filter(a => {
+    if (a === 'put-on-hold') return false
+    if (a === 'mark-live') return isOnHold
+    return true
+  })
+  if (maintenanceStatus === 'Due Soon') {
+    if (!actions.includes('record-payment')) actions.push('record-payment')
+    if (!actions.includes('discontinue')) actions.push('discontinue')
+  }
+  return actions
+}
+
 function UpdateDialogContent({ websiteId, onClose }: { websiteId: string; onClose: () => void }) {
   const { data: website, isLoading, isError, error } = useWebsite(websiteId)
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false)
+  const [markLiveOpen, setMarkLiveOpen] = useState(false)
   const [discontinueOpen, setDiscontinueOpen] = useState(false)
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]!)
+  const today = new Date().toISOString().split('T')[0]!
+  const [paymentDate, setPaymentDate] = useState(today)
   const [renewalDate, setRenewalDate] = useState('')
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [liveUrl, setLiveUrl] = useState('')
+  const [liveHostedDate, setLiveHostedDate] = useState(today)
+  const [liveRenewalDate, setLiveRenewalDate] = useState('')
   const updateMutation = useUpdateWebsite(websiteId)
+  const { data: billingId } = useCurrentBillingId(websiteId)
+  const paymentMutation = useRecordPayment(websiteId)
 
   const runAction = (payload: UpdateWebsiteInput) => {
     updateMutation.mutate(payload, { onSuccess: onClose })
   }
+
+  const actions = website ? getEffectiveActions(website.allowed_actions, website.website_status, website.maintenance_status) : []
 
   return (
     <>
@@ -50,7 +75,7 @@ function UpdateDialogContent({ websiteId, onClose }: { websiteId: string; onClos
           </Dialog.Title>
           {website ? (
             <Dialog.Description className="mt-0.5 text-sm text-[#64745F] dark:text-[#9fb49b]">
-              {website.projectName}
+              {website.project_name}
             </Dialog.Description>
           ) : (
             <Skeleton className="mt-1 h-4 w-40" />
@@ -78,19 +103,43 @@ function UpdateDialogContent({ websiteId, onClose }: { websiteId: string; onClos
           </>
         ) : isError ? (
           <p className="text-sm text-destructive">{(error as Error).message}</p>
-        ) : !website ? null : website.allowedActions.length === 0 ? (
+        ) : !website ? null : actions.length === 0 ? (
           <p className="text-sm text-[#64745F] dark:text-[#9fb49b]">No actions available.</p>
         ) : (
-          website.allowedActions.map((action) => {
+          actions.map((action) => {
             if (action === 'mark-live') {
               return (
-                <ActionButton
-                  key={action}
-                  icon={<CheckCircle2 className="size-4" />}
-                  label="Mark Live"
-                  disabled={updateMutation.isPending}
-                  onClick={() => runAction({ websiteStatus: 'Live' })}
-                />
+                <div key={action}>
+                  <ActionButton
+                    icon={<CheckCircle2 className="size-4" />}
+                    label="Mark as Live"
+                    disabled={updateMutation.isPending}
+                    onClick={() => setMarkLiveOpen((o) => !o)}
+                  />
+                  {markLiveOpen ? (
+                    <div className="mt-2 grid gap-3 rounded-xl border border-[#e8f0e4] bg-[#f8faf7] p-4 dark:border-[#2f4a32] dark:bg-[#101912]">
+                      <label className="grid gap-1 text-sm font-semibold text-[#102315] dark:text-[#edf7ee]">
+                        URL <span className="text-red-500">*</span>
+                        <Input placeholder="https://example.com" value={liveUrl} onChange={(e) => setLiveUrl(e.target.value)} />
+                      </label>
+                      <label className="grid gap-1 text-sm font-semibold text-[#102315] dark:text-[#edf7ee]">
+                        Hosted Date <span className="text-red-500">*</span>
+                        <Input type="date" value={liveHostedDate} onChange={(e) => setLiveHostedDate(e.target.value)} />
+                      </label>
+                      <label className="grid gap-1 text-sm font-semibold text-[#102315] dark:text-[#edf7ee]">
+                        Renewal Date <span className="text-red-500">*</span>
+                        <Input type="date" value={liveRenewalDate} onChange={(e) => setLiveRenewalDate(e.target.value)} />
+                      </label>
+                      <Button
+                        disabled={updateMutation.isPending || !liveUrl || !liveHostedDate || !liveRenewalDate}
+                        className="rounded-lg bg-[#4F5DF5] text-white hover:bg-[#3F4DE0]"
+                        onClick={() => runAction({ websiteStatus: 'Live', maintenanceStatus: 'Active', url: liveUrl, hostedDate: liveHostedDate, renewalDate: liveRenewalDate })}
+                      >
+                        {updateMutation.isPending ? 'Saving…' : 'Mark as Live'}
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
               )
             }
 
@@ -104,26 +153,48 @@ function UpdateDialogContent({ websiteId, onClose }: { websiteId: string; onClos
                   />
                   {recordPaymentOpen ? (
                     <div className="mt-2 grid gap-3 rounded-xl border border-[#e8f0e4] bg-[#f8faf7] p-4 dark:border-[#2f4a32] dark:bg-[#101912]">
-                      <label className="grid gap-1 text-sm font-semibold text-[#102315] dark:text-[#edf7ee]">
-                        Payment date
-                        <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
-                      </label>
-                      <label className="grid gap-1 text-sm font-semibold text-[#102315] dark:text-[#edf7ee]">
-                        New renewal date
-                        <Input type="date" value={renewalDate} onChange={(e) => setRenewalDate(e.target.value)} />
-                      </label>
-                      <Button
-                        disabled={updateMutation.isPending || !paymentDate || !renewalDate}
-                        className="rounded-lg bg-[#658354] text-white hover:bg-[#4b6043]"
-                        onClick={() =>
-                          updateMutation.mutate(
-                            { lastPaymentReceived: paymentDate, renewalDate, maintenanceStatus: 'Active' },
-                            { onSuccess: onClose },
-                          )
-                        }
-                      >
-                        {updateMutation.isPending ? 'Saving...' : 'Save payment'}
-                      </Button>
+                      {!billingId ? (
+                        <p className="text-sm text-[#DC2626]">No active billing period found.</p>
+                      ) : (
+                        <>
+                          <label className="grid gap-1 text-sm font-semibold text-[#102315] dark:text-[#edf7ee]">
+                            Payment amount <span className="text-red-500">*</span>
+                            <div className="relative">
+                              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-[#64745F] dark:text-[#9fb49b]">₹</span>
+                              <Input
+                                className="pl-7"
+                                placeholder="0"
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(e.target.value)}
+                              />
+                            </div>
+                          </label>
+                          <label className="grid gap-1 text-sm font-semibold text-[#102315] dark:text-[#edf7ee]">
+                            Payment date <span className="text-red-500">*</span>
+                            <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+                          </label>
+                          <label className="grid gap-1 text-sm font-semibold text-[#102315] dark:text-[#edf7ee]">
+                            New renewal date <span className="text-red-500">*</span>
+                            <Input type="date" value={renewalDate} onChange={(e) => setRenewalDate(e.target.value)} />
+                          </label>
+                          <Button
+                            disabled={paymentMutation.isPending || !paymentAmount || !paymentDate || !renewalDate}
+                            className="rounded-lg bg-[#658354] text-white hover:bg-[#4b6043]"
+                            onClick={() =>
+                              paymentMutation.mutate(
+                                { websiteId, billingId, amount: paymentAmount, paymentDate, paymentMode: 'Bank Transfer', remarks: null },
+                                {
+                                  onSuccess: () => {
+                                    updateMutation.mutate({ renewalDate, maintenanceStatus: 'Active' }, { onSuccess: onClose })
+                                  },
+                                },
+                              )
+                            }
+                          >
+                            {paymentMutation.isPending || updateMutation.isPending ? 'Saving…' : 'Save payment'}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   ) : null}
                 </div>
@@ -159,15 +230,17 @@ function UpdateDialogContent({ websiteId, onClose }: { websiteId: string; onClos
           })
         )}
 
-        {updateMutation.isPending ? (
+        {(updateMutation.isPending || paymentMutation.isPending) ? (
           <div className="flex items-center gap-2 text-xs text-[#64745F] dark:text-[#9fb49b]">
             <Loader2 className="size-3.5 animate-spin" />
-            Saving...
+            Saving…
           </div>
         ) : null}
 
         {updateMutation.isError ? (
           <p className="text-xs text-destructive">{(updateMutation.error as Error).message}</p>
+        ) : paymentMutation.isError ? (
+          <p className="text-xs text-destructive">{(paymentMutation.error as Error).message}</p>
         ) : null}
       </div>
     </>

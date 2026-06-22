@@ -5,30 +5,33 @@ export interface ClientsFilters {
 }
 
 export interface Client {
-  clientId: string
+  id: number
+  client_id: string
   name: string
   company: string | null
   phone: string | null
   email: string | null
   city: string | null
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+  is_active: boolean
+  source?: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface ClientWithCount extends Client {
-  websiteCount: number
+  website_count: number
 }
 
 export interface ClientWebsiteSummary {
-  websiteId: string
-  projectName: string
+  id: number
+  website_id: string
+  project_name: string
   url: string | null
-  websiteStatus: string
-  maintenanceStatus: string
-  siteType?: string
+  website_status: string
+  maintenance_status: string
+  site_type?: string
   platform?: string
-  renewalDate?: string | null
+  current_billing_due_date?: string | null
 }
 
 export interface ClientDetail extends Client {
@@ -37,9 +40,9 @@ export interface ClientDetail extends Client {
 
 export interface ClientInput {
   name: string
-  company?: string
+  company: string
+  email: string
   phone?: string
-  email?: string
   city?: string
   isActive?: boolean
 }

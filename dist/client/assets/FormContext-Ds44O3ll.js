@@ -1,0 +1,1 @@
+import{i as e,n as t}from"./jsx-runtime-bzQ4Vb5N.js";import{i as n}from"./useRenderElement-_7sY3EPS.js";var r=e(t()),i=r.createContext({formRef:{current:{fields:new Map}},errors:{},clearErrors:n,validationMode:`onSubmit`,submitAttemptedRef:{current:!1}});function a(){return r.useContext(i)}export{a as t};

@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from 'lucide-react'
-import { Button } from '#/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { NoResults } from '#/components/ui/no-results'
 import { formatDate } from '#/lib/format'
@@ -20,28 +19,26 @@ interface ClientsTableProps {
 
 const gridClass = 'grid grid-cols-[0.85fr_1.2fr_1.3fr_1fr_0.8fr_0.8fr_1fr_0.7fr]'
 
-// Columns that support sorting (by their API field name)
 const SORTABLE: Record<string, string> = {
   Company:  'company',
-  City:     'city',
-  Websites: 'websiteCount',
-  Status:   'isActive',
-  Created:  'createdAt',
+  Address:  'city',
+  Websites: 'website_count',
+  Status:   'is_active',
+  Created:  'created_at',
 }
 
 export function ClientsTable({ clients, isLoading, isError, error, sortBy, sortOrder, onSortChange, onEdit }: ClientsTableProps) {
-  // Always render active clients first, inactive at bottom (client-side within current page)
   const sorted = clients
     ? [...clients].sort((a, b) => {
-        if (a.isActive === b.isActive) return 0
-        return a.isActive ? -1 : 1
+        if (a.is_active === b.is_active) return 0
+        return a.is_active ? -1 : 1
       })
     : undefined
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#c7ddb5] bg-white shadow-sm dark:border-[#2f4a32] dark:bg-[#101912]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <div className={cn(gridClass, 'shrink-0 border-b border-[#c7ddb5] bg-[#ddead1] dark:border-[#2f4a32] dark:bg-[#203423]')}>
+      <div className={cn(gridClass, 'shrink-0 border-b border-[#E5E7EB] bg-[#FAFBFC] dark:border-[#1e2244] dark:bg-[#131624]')}>
         <HeaderCell>Client ID</HeaderCell>
         <HeaderCell>Name</HeaderCell>
         {Object.keys(SORTABLE).map((label) => (
@@ -62,47 +59,63 @@ export function ClientsTable({ clients, isLoading, isError, error, sortBy, sortO
         {isLoading ? (
           <StateRow>Loading...</StateRow>
         ) : isError ? (
-          <StateRow className="text-destructive">{error?.message ?? 'Something went wrong.'}</StateRow>
+          <StateRow className="text-[#DC2626]">{error?.message ?? 'Something went wrong.'}</StateRow>
         ) : !sorted || sorted.length === 0 ? (
           <NoResults message="No clients found." />
         ) : (
-          sorted.map((client, index) => (
+          sorted.map((client) => (
             <div
-              key={client.clientId}
+              key={client.id}
               className={cn(
-                'grid min-h-[54px] grid-cols-[0.85fr_1.2fr_1.3fr_1fr_0.8fr_0.8fr_1fr_0.7fr] items-center border-b border-[#c7ddb5]/40 text-[13px] dark:border-[#2f4a32]/70',
-                client.isActive
-                  ? 'hover:bg-[#ddead1]/30 dark:hover:bg-[#203423]/70'
+                gridClass,
+                'min-h-[54px] items-center border-b border-[#EEF0F2] text-[13px] transition-colors dark:border-[#252847]',
+                client.is_active
+                  ? 'hover:bg-[#F7F8FA] dark:hover:bg-[#131624]'
                   : 'opacity-60 hover:opacity-80',
-                index % 2 === 1 && 'bg-[#ddead1]/20 dark:bg-[#17251b]',
               )}
             >
-              <Cell className="font-bold text-[#102315] dark:text-[#edf7ee]">{client.clientId}</Cell>
-              <Cell className="font-bold text-[#102315] dark:text-[#edf7ee]">{client.name}</Cell>
-              <Cell className="font-medium text-[#64745F] dark:text-[#b7c8b3]">{client.company ?? '-'}</Cell>
-              <Cell className="font-medium text-[#64745F] dark:text-[#b7c8b3]">{client.city ?? '-'}</Cell>
-              <Cell className="font-bold text-[#102315] dark:text-[#edf7ee]">{client.websiteCount}</Cell>
+              <Cell className="font-semibold text-[#11141A] dark:text-[#E5E7EB]">{client.client_id}</Cell>
+              <Cell className="font-semibold text-[#11141A] dark:text-[#E5E7EB]">{client.name}</Cell>
+              <Cell className="text-[#5C6270] dark:text-[#9CA3AF]">{client.company ?? '—'}</Cell>
+              <Cell className="text-[#5C6270] dark:text-[#9CA3AF]">{client.city ?? '—'}</Cell>
+              <Cell className="font-semibold text-[#11141A] dark:text-[#E5E7EB]">{client.website_count}</Cell>
               <Cell>
                 <span
                   className={cn(
-                    'rounded-full px-2.5 py-0.5 text-xs font-bold',
-                    client.isActive
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
-                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800/60 dark:text-gray-400',
+                    'inline-flex items-center rounded-[7px] px-[11px] py-[4px] text-[11px] font-bold uppercase tracking-[.02em]',
+                    client.is_active
+                      ? 'bg-[#ECFDF5] text-[#059669] dark:bg-[#064E3B] dark:text-[#34D399]'
+                      : 'bg-[#F3F4F6] text-[#6B7280] dark:bg-[#1F2937] dark:text-[#9CA3AF]',
                   )}
                 >
-                  {client.isActive ? 'Active' : 'Inactive'}
+                  {client.is_active ? 'Active' : 'Inactive'}
                 </span>
               </Cell>
-              <Cell className="font-medium text-[#64745F] dark:text-[#b7c8b3]">{formatDate(client.createdAt)}</Cell>
+              <Cell className="text-[#5C6270] dark:text-[#9CA3AF]">{formatDate(client.created_at)}</Cell>
               <Cell className="flex justify-end">
                 <DropdownMenu>
-                  <DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" aria-label="Open actions" className="border-[#c7ddb5] dark:border-[#2f4a32]" />}>
-                    <MoreHorizontal />
+                  <DropdownMenuTrigger render={
+                    <button
+                      type="button"
+                      className="flex size-7 items-center justify-center rounded-[7px] text-[#8A8F98] transition hover:bg-[#F4F5F7] dark:hover:bg-[#1c2045]"
+                      aria-label="Open actions"
+                    />
+                  }>
+                    <MoreHorizontal className="size-4" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="rounded-xl border border-[#c7ddb5] bg-white dark:border-[#2f4a32] dark:bg-[#132018]">
-                    <DropdownMenuItem render={<Link to="/clients/$clientId" params={{ clientId: client.clientId }} />}>View details</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEdit?.(client)}>Edit client</DropdownMenuItem>
+                  <DropdownMenuContent align="end" className="rounded-[10px] border border-[#E5E7EB] bg-white p-1 shadow-[0_10px_30px_rgba(17,20,26,.12)] dark:border-[#1e2244] dark:bg-[#181b2d]">
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#3D4250] focus:bg-[#F4F5F7] dark:text-[#E5E7EB] dark:focus:bg-[#1c2045]"
+                      render={<Link to="/clients/$clientId" params={{ clientId: String(client.id) }} />}
+                    >
+                      View details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#3D4250] focus:bg-[#F4F5F7] dark:text-[#E5E7EB] dark:focus:bg-[#1c2045]"
+                      onClick={() => onEdit?.(client)}
+                    >
+                      Edit client
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </Cell>
@@ -131,17 +144,20 @@ function SortableHeaderCell({
 }) {
   const active = sortBy === field
   return (
-    <div className={cn('flex h-14 items-center px-3 py-2', className)}>
+    <div className={cn('flex h-12 items-center px-3 py-2', className)}>
       <button
         type="button"
         onClick={() => onSort?.(field)}
-        className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider text-[#3F6F39] transition hover:text-[#102315] dark:text-[#b6d7a8] dark:hover:text-[#edf7ee]"
+        className={cn(
+          'inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[.03em] transition',
+          active ? 'text-[#4F5DF5]' : 'text-[#8A8F98] hover:text-[#3D4250] dark:hover:text-[#E5E7EB]',
+        )}
       >
         {label}
         {active ? (
-          sortOrder === 'asc' ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />
+          sortOrder === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
         ) : (
-          <ArrowUpDown className="size-3.5 opacity-50" />
+          <ArrowUpDown className="size-3 opacity-40" />
         )}
       </button>
     </div>
@@ -149,7 +165,7 @@ function SortableHeaderCell({
 }
 
 function HeaderCell({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('flex h-14 min-w-0 items-center overflow-hidden px-3 py-2 text-[11px] font-extrabold uppercase tracking-wider text-[#3F6F39] dark:text-[#b6d7a8]', className)}>{children}</div>
+  return <div className={cn('flex h-12 min-w-0 items-center overflow-hidden px-3 py-2 text-[11px] font-semibold uppercase tracking-[.03em] text-[#8A8F98]', className)}>{children}</div>
 }
 
 function Cell({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -157,5 +173,5 @@ function Cell({ children, className }: { children: React.ReactNode; className?: 
 }
 
 function StateRow({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('flex h-40 items-center justify-center text-[#64745F]', className)}>{children}</div>
+  return <div className={cn('flex h-40 items-center justify-center text-[13px] text-[#8A8F98]', className)}>{children}</div>
 }

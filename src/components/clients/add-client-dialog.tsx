@@ -27,7 +27,7 @@ const nameLike = (field: string, max = 100) =>
 
 const schema = z.object({
   name: nameLike('Name'),
-  company: z.preprocess(emptyToUndefined, nameLike('Company', 150).optional()),
+  company: nameLike('Company', 150),
   phone: z.preprocess(
     emptyToUndefined,
     z.string()
@@ -35,8 +35,8 @@ const schema = z.object({
       .refine((v) => !/^(\d)\1{9}$/.test(v), 'Cannot be a repeated digit pattern')
       .optional(),
   ),
-  email: z.preprocess(emptyToUndefined, z.string().email('Invalid email').optional()),
-  city: z.preprocess(emptyToUndefined, nameLike('City').optional()),
+  email: z.preprocess(emptyToUndefined, z.string({ message: 'Email is required' }).email('Invalid email')),
+  city: z.preprocess(emptyToUndefined, nameLike('Address').optional()),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -63,9 +63,9 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
     createMutation.mutate(
       {
         name: values.name.trim(),
-        company: values.company?.trim() || undefined,
+        company: values.company.trim(),
+        email: values.email.trim(),
         phone: values.phone?.trim() || undefined,
-        email: values.email?.trim() || undefined,
         city: values.city?.trim() || undefined,
       },
       {
@@ -90,18 +90,18 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
 
-        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#e5ebe2] bg-white shadow-xl transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 dark:border-[#2f4a32] dark:bg-[#101912]">
+        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#E5E7EB] bg-white shadow-xl transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
 
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#f0f4ee] px-6 py-4 dark:border-[#2f4a32]/60">
-            <Dialog.Title className="text-lg font-bold text-[#101828] dark:text-[#edf7ee]">
+          <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
+            <Dialog.Title className="text-lg font-bold text-[#11141A]">
               Add Client
             </Dialog.Title>
             <Dialog.Close
               render={
                 <button
                   type="button"
-                  className="flex size-8 items-center justify-center rounded-lg text-[#64745F] transition hover:bg-[#f0f4ee] hover:text-[#101828] dark:hover:bg-[#203423] dark:hover:text-[#edf7ee]"
+                  className="flex size-8 items-center justify-center rounded-lg text-[#8A8F98] transition hover:bg-[#F4F5F7] hover:text-[#11141A]"
                 />
               }
             >
@@ -112,13 +112,13 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
           {/* Body */}
           <form onSubmit={handleSubmit} className="px-6 py-5">
             {/* Section header */}
-            <div className="mb-5 flex items-center gap-3 border-b border-[#f0f4ee] pb-4 dark:border-[#2f4a32]/60">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#ddead1] text-[#658354] dark:bg-[#203423] dark:text-[#85e0a3]">
+            <div className="mb-5 flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#EEEFFE] text-[#4F5DF5]">
                 <UserRoundPlus className="size-4" />
               </div>
               <div>
-                <p className="text-sm font-bold text-[#101828] dark:text-[#edf7ee]">Client Details</p>
-                <p className="text-xs text-[#64745F] dark:text-[#9fb49b]">Enter the basic information about the client.</p>
+                <p className="text-sm font-bold text-[#11141A]">Client Details</p>
+                <p className="text-xs text-[#5C6270]">Enter the basic information about the client.</p>
               </div>
             </div>
 
@@ -126,52 +126,52 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
               {/* Row 1: Name + Company */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">
-                    Client Name <span className="text-red-500">*</span>
+                  <label className="text-[11.5px] font-semibold text-[#374151]">
+                    Client Name <span className="text-[#DC2626]">*</span>
                   </label>
                   <Input placeholder="Enter client name" {...form.register('name')} />
-                  {e.name ? <p className="text-xs text-destructive">{e.name.message}</p> : null}
+                  {e.name ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.name.message}</p> : null}
                 </div>
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Company</label>
-                  <Input placeholder="Enter company name (optional)" {...form.register('company')} />
-                  {e.company ? <p className="text-xs text-destructive">{e.company.message as string}</p> : null}
+                  <label className="text-[11.5px] font-semibold text-[#374151]">Company <span className="text-[#DC2626]">*</span></label>
+                  <Input placeholder="Enter company name" {...form.register('company')} />
+                  {e.company ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.company.message as string}</p> : null}
                 </div>
               </div>
 
               {/* Row 2: Phone + Email */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Phone</label>
+                  <label className="text-[11.5px] font-semibold text-[#374151]">Phone</label>
                   <div className="relative">
-                    <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
+                    <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9CA3AF]" />
                     <Input className="pl-9" placeholder="Enter 10-digit mobile number" {...form.register('phone')} />
                   </div>
-                  {e.phone ? <p className="text-xs text-destructive">{e.phone.message as string}</p> : null}
+                  {e.phone ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.phone.message as string}</p> : null}
                 </div>
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">Email</label>
+                  <label className="text-[11.5px] font-semibold text-[#374151]">Email <span className="text-[#DC2626]">*</span></label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
-                    <Input className="pl-9" type="email" placeholder="Enter email address (optional)" {...form.register('email')} />
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9CA3AF]" />
+                    <Input className="pl-9" type="email" placeholder="Enter email address" {...form.register('email')} />
                   </div>
-                  {e.email ? <p className="text-xs text-destructive">{e.email.message as string}</p> : null}
+                  {e.email ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.email.message as string}</p> : null}
                 </div>
               </div>
 
-              {/* Row 3: City */}
+              {/* Row 3: Address */}
               <div className="grid gap-1.5">
-                <label className="text-sm font-semibold text-[#101828] dark:text-[#edf7ee]">City</label>
+                <label className="text-[11.5px] font-semibold text-[#374151]">Address</label>
                 <div className="relative">
-                  <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9fb49b]" />
-                  <Input className="pl-9" placeholder="Enter city (optional)" {...form.register('city')} />
+                  <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9CA3AF]" />
+                  <Input className="pl-9" placeholder="Enter address (optional)" {...form.register('city')} />
                 </div>
-                {e.city ? <p className="text-xs text-destructive">{e.city.message as string}</p> : null}
+                {e.city ? <p className="text-[11px] font-semibold text-[#DC2626]">{e.city.message as string}</p> : null}
               </div>
             </div>
 
             {createMutation.isError ? (
-              <p className="mt-3 text-sm text-destructive">{(createMutation.error as Error).message}</p>
+              <p className="mt-3 text-[12px] font-semibold text-[#DC2626]">{(createMutation.error as Error).message}</p>
             ) : null}
 
             {/* Footer */}
@@ -179,7 +179,7 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
               <Button
                 type="button"
                 variant="outline"
-                className="h-10 min-w-24 rounded-xl border-[#dde5d8] dark:border-[#2f4a32]"
+                className="h-10 min-w-24 rounded-[9px] border-[#E5E7EB] text-[#5C6270]"
                 onClick={handleCancel}
               >
                 Cancel
@@ -187,7 +187,7 @@ export function AddClientDialog({ open, onOpenChange, onCreated }: AddClientDial
               <Button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="h-10 gap-2 rounded-xl bg-[#658354] px-5 font-bold text-white hover:bg-[#4b6043]"
+                className="h-10 gap-2 rounded-[9px] bg-[#4F5DF5] px-5 text-[13px] font-semibold text-white hover:bg-[#3F4DE0]"
               >
                 <UserRoundPlus className="size-4" />
                 {createMutation.isPending ? 'Creating...' : 'Create Client'}
