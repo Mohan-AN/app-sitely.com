@@ -10,6 +10,7 @@ interface ManageDueDateDialogProps {
   onClose: () => void
 }
 
+
 export function ManageDueDateDialog({ open, onClose }: ManageDueDateDialogProps) {
   const { data: settings, isLoading } = useSettings()
   const currentDays = settings ? parseInt(settings.renewal_window_days, 10) : null
