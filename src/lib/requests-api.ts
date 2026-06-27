@@ -11,8 +11,12 @@ export interface WebsiteRequest {
   description: string | null
   status: RequestStatus
   requested_date: string | null
+  delivered_date?: string | null
   cost: string | null
   payment_status: string | null
+  payment_date?: string | null
+  invoice_file_url?: string | null
+  invoice_file_name?: string | null
   created_at: string
   updated_at: string
   reported_by: string
@@ -25,6 +29,7 @@ export interface CreateRequestInput {
   description?: string | null
   status?: RequestStatus
   requestedDate?: string | null
+  deliveredDate?: string | null
   cost?: string | null
   paymentStatus?: 'not_paid' | 'paid'
   paymentDate?: string | null
@@ -32,9 +37,15 @@ export interface CreateRequestInput {
 }
 
 export interface UpdateRequestInput {
-  status?: RequestStatus
   title?: string
   description?: string | null
+  status?: RequestStatus
+  requestedDate?: string | null
+  deliveredDate?: string | null
+  cost?: string | null
+  paymentStatus?: 'not_paid' | 'paid'
+  paymentDate?: string | null
+  invoiceFile?: File | null
 }
 
 export function listRequests(websiteId: string, page = 1, limit = 20) {
@@ -44,30 +55,65 @@ export function listRequests(websiteId: string, page = 1, limit = 20) {
   )
 }
 
+// Maps frontend CreateRequestInput → backend-accepted fields
+function buildCreatePayload(input: CreateRequestInput): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    type:  input.type,
+    title: input.title,
+  }
+  if (input.description)   payload.description          = input.description
+  if (input.status)        payload.status               = input.status
+  if (input.requestedDate) payload.requestedDate        = input.requestedDate
+  if (input.deliveredDate) payload.deliveredDate        = input.deliveredDate
+  if (input.cost)          payload.cost                 = input.cost
+  if (input.paymentStatus !== undefined) payload.isPaid = input.paymentStatus === 'paid'
+  if (input.paymentDate)   payload.paymentReceivedDate  = input.paymentDate
+  return payload
+}
+
 export function createRequest(input: CreateRequestInput) {
   if (input.invoiceFile) {
     const fd = new FormData()
-    fd.append('type', input.type)
-    fd.append('title', input.title)
-    if (input.description) fd.append('description', input.description)
-    if (input.status) fd.append('status', input.status)
-    if (input.requestedDate) fd.append('requestedDate', input.requestedDate)
-    if (input.cost) fd.append('cost', input.cost)
-    if (input.paymentStatus) fd.append('paymentStatus', input.paymentStatus)
-    if (input.paymentDate) fd.append('paymentDate', input.paymentDate)
+    const payload = buildCreatePayload(input)
+    for (const [key, value] of Object.entries(payload)) {
+      if (value !== null && value !== undefined) fd.append(key, String(value))
+    }
     fd.append('invoiceFile', input.invoiceFile)
     return apiFetch<WebsiteRequest>(`/websites/${input.websiteId}/requests`, { method: 'POST', body: fd })
   }
-  const { websiteId: _wid, invoiceFile: _f, ...rest } = input
   return apiFetch<WebsiteRequest>(`/websites/${input.websiteId}/requests`, {
     method: 'POST',
-    body: JSON.stringify(rest),
+    body: JSON.stringify(buildCreatePayload(input)),
   })
 }
 
-export function updateRequest(websiteId: string, requestId: string, input: UpdateRequestInput) {
-  return apiFetch<WebsiteRequest>(`/websites/${websiteId}/requests/${requestId}`, {
+// Maps frontend UpdateRequestInput → backend-accepted fields:
+//   paymentStatus ('paid'|'not_paid') → isPaid (boolean)
+//   paymentDate                       → paymentReceivedDate
+//   description                       → remarks
+//   title / requestedDate / deliveredDate are not accepted by the backend update route
+function buildUpdatePayload(input: UpdateRequestInput): Record<string, unknown> {
+  const payload: Record<string, unknown> = {}
+  if (input.status !== undefined)        payload.status              = input.status
+  if (input.cost    !== undefined)        payload.cost                = input.cost
+  if (input.description !== undefined)   payload.remarks             = input.description
+  if (input.paymentStatus !== undefined) payload.isPaid              = input.paymentStatus === 'paid'
+  if (input.paymentDate   !== undefined) payload.paymentReceivedDate = input.paymentDate || null
+  return payload
+}
+
+export function updateRequest(_websiteId: string, requestId: string, input: UpdateRequestInput) {
+  if (input.invoiceFile) {
+    const fd = new FormData()
+    const payload = buildUpdatePayload(input)
+    for (const [key, value] of Object.entries(payload)) {
+      if (value !== null && value !== undefined) fd.append(key, String(value))
+    }
+    fd.append('invoiceFile', input.invoiceFile)
+    return apiFetch<WebsiteRequest>(`/requests/${requestId}`, { method: 'PUT', body: fd })
+  }
+  return apiFetch<WebsiteRequest>(`/requests/${requestId}`, {
     method: 'PUT',
-    body: JSON.stringify(input),
+    body: JSON.stringify(buildUpdatePayload(input)),
   })
 }

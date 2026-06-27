@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Dialog } from '@base-ui/react'
+import { useNavigate } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { ConfirmDialog } from '#/components/ui/confirm-dialog'
 import { Skeleton } from '#/components/ui/skeleton'
@@ -29,12 +30,14 @@ function EditDialogContent({ websiteId, onClose }: { websiteId: string; onClose:
   const { data: website, isLoading, isError, error } = useWebsite(websiteId)
   const deleteMutation = useDeleteWebsite(websiteId)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const navigate = useNavigate()
 
   const handleDeleteConfirm = () => {
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
         setShowDeleteDialog(false)
         onClose()
+        navigate({ to: '/', search: { page: 1, limit: 10, showFilters: false } })
       },
     })
   }

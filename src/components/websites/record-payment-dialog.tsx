@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { CheckCircle2, Loader2, Paperclip, X } from 'lucide-react'
+import { CheckCircle2, Eye, Loader2, Paperclip, X } from 'lucide-react'
 import { useRecordPayment } from '#/hooks/use-billing'
+import { useUnpaidBillingPeriods } from '#/hooks/use-websites'
 import { useServiceOptions } from '#/hooks/use-service-options'
 import { formatCurrency } from '#/lib/format'
 import { cn } from '#/lib/utils'
@@ -24,10 +25,9 @@ type FormValues = z.infer<typeof schema>
 
 interface RecordPaymentDialogProps {
   websiteId: string
-  billingId: string | null | undefined
   projectName: string
+  hostedDate: string | null
   maintenanceAmount?: string | null
-  billingPeriodLabel?: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
@@ -39,24 +39,48 @@ type Phase = 'form' | 'saving' | 'success'
 
 export function RecordPaymentDialog({
   websiteId,
-  billingId,
   projectName,
+  hostedDate,
   maintenanceAmount,
-  billingPeriodLabel,
   open,
   onOpenChange,
   onSuccess,
 }: RecordPaymentDialogProps) {
   const [phase, setPhase] = useState<Phase>('form')
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
+
+  const { periods, isLoading: periodsLoading } = useUnpaidBillingPeriods(websiteId, hostedDate)
+
+  // Selected period metadata
+  const selectedPeriod = periods.find((p) => p.period_key === selectedPeriodKey)
+  const selectedBillingId = selectedPeriod?.billing?.billing_id ?? null
+  const existingInvoiceUrl = selectedPeriod?.billing?.invoice_file_url ?? null
+  const existingInvoiceName = selectedPeriod?.billing?.invoice_file_name ?? null
+
+  const openPreview = (file: File) => {
+    const url = URL.createObjectURL(file)
+    if (file.type.startsWith('image/')) {
+      setPreviewUrl(url)
+    } else {
+      window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 10000)
+    }
+  }
+
+  const closePreview = () => {
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null) }
+  }
+
   const mutation = useRecordPayment(websiteId)
 
   const paymentModesQuery = useServiceOptions('payment_mode')
   const paymentModes = (paymentModesQuery.data ?? []).filter((o) => o.is_active)
 
-  const today = new Date().toISOString().split('T')[0]!
+  const today = new Date().toLocaleDateString('en-CA')
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema) as any,
@@ -69,10 +93,18 @@ export function RecordPaymentDialog({
     },
   })
 
+  // Auto-select first unpaid period when periods load
+  useEffect(() => {
+    if (periods.length > 0 && !selectedPeriodKey) {
+      setSelectedPeriodKey(periods[0].period_key)
+    }
+  }, [periods, selectedPeriodKey])
+
   useEffect(() => {
     if (open) {
       setPhase('form')
       setInvoiceFile(null)
+      setSelectedPeriodKey('')
       form.reset({
         amount: maintenanceAmount ?? '',
         paymentDate: today,
@@ -91,15 +123,15 @@ export function RecordPaymentDialog({
   }
 
   const submit = form.handleSubmit((values) => {
-    if (!billingId) {
-      form.setError('root', { message: 'No active billing period found for this website.' })
+    if (!selectedBillingId) {
+      form.setError('root', { message: 'Please select a billing period.' })
       return
     }
     setPhase('saving')
     mutation.mutate(
       {
         websiteId,
-        billingId,
+        billingId: selectedBillingId,
         amount: values.amount,
         paymentDate: values.paymentDate,
         paymentMode: values.paymentMode,
@@ -117,12 +149,11 @@ export function RecordPaymentDialog({
   const fieldCls = (hasError?: boolean) =>
     cn(
       'h-10 w-full rounded-[9px] border px-3 text-[12.5px] outline-none transition',
-      hasError
-        ? 'border-[#DC2626]'
-        : 'border-[#E5E7EB] focus:border-[#4F5DF5]',
+      hasError ? 'border-[#DC2626]' : 'border-[#E5E7EB] focus:border-[#4F5DF5]',
     )
 
   return (
+    <>
     <div
       ref={backdropRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]"
@@ -191,11 +222,35 @@ export function RecordPaymentDialog({
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11.5px] font-semibold text-[#5C6270]">Billing Period</label>
-                  <div className={cn(fieldCls(), 'flex items-center bg-[#FAFBFC] text-[#5C6270]')}>
-                    {billingPeriodLabel ?? 'Current period'}
-                  </div>
-                  <p className="text-[10.5px] text-[#94A3B8]">Only the current/next rolling period is shown</p>
+                  <label className="text-[11.5px] font-semibold text-[#5C6270]">
+                    Billing Period <span className="text-[#DC2626]">*</span>
+                  </label>
+                  {periodsLoading ? (
+                    <div className={cn(fieldCls(), 'flex items-center bg-[#FAFBFC] text-[#9CA3AF]')}>
+                      Loading periods…
+                    </div>
+                  ) : periods.length === 0 ? (
+                    <div className={cn(fieldCls(), 'flex items-center bg-[#FAFBFC] text-[#059669]')}>
+                      All periods paid
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedPeriodKey}
+                      onChange={(e) => setSelectedPeriodKey(e.target.value)}
+                      className={cn(fieldCls(!selectedPeriodKey && periods.length > 0))}
+                    >
+                      <option value="">Select period</option>
+                      {periods.map((p) => (
+                        <option key={p.period_key} value={p.period_key}>
+                          {p.period_label}
+                          {p.billing?.status === 'overdue' ? ' (Overdue)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {periods.length === 0 && !periodsLoading && (
+                    <p className="text-[10.5px] font-semibold text-[#059669]">All periods are already paid</p>
+                  )}
                 </div>
               </div>
 
@@ -240,7 +295,9 @@ export function RecordPaymentDialog({
                   <label className="text-[11.5px] font-semibold text-[#5C6270]">
                     Payment Mode <span className="text-[#DC2626]">*</span>
                   </label>
-                  {paymentModes.length > 0 ? (
+                  {paymentModesQuery.isLoading ? (
+                    <div className={cn(fieldCls(), 'flex items-center bg-[#FAFBFC] text-[#9CA3AF]')}>Loading modes…</div>
+                  ) : paymentModes.length > 0 ? (
                     <select
                       {...form.register('paymentMode')}
                       className={fieldCls(!!form.formState.errors.paymentMode)}
@@ -280,7 +337,16 @@ export function RecordPaymentDialog({
                   type="file"
                   accept="application/pdf,image/*"
                   className="hidden"
-                  onChange={(e) => setInvoiceFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null
+                    if (f && f.size > 5 * 1024 * 1024) {
+                      alert('File is too large. Maximum size is 5 MB.')
+                      e.target.value = ''
+                      return
+                    }
+                    setInvoiceFile(f)
+                    if (e.target) e.target.value = ''
+                  }}
                 />
                 {invoiceFile ? (
                   <div className="flex items-center gap-2 rounded-[9px] border border-[#A7F3D0] bg-[#ECFDF5] px-4 py-3">
@@ -288,10 +354,33 @@ export function RecordPaymentDialog({
                     <span className="flex-1 truncate text-[12.5px] font-semibold text-[#059669]">{invoiceFile.name}</span>
                     <button
                       type="button"
+                      onClick={() => openPreview(invoiceFile)}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-[#059669] hover:text-[#047857]"
+                    >
+                      <Eye className="size-3.5" />
+                      <span>Preview</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => { setInvoiceFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
                       className="text-[#059669] hover:text-[#047857]"
                     >
                       <X className="size-3.5" />
+                    </button>
+                  </div>
+                ) : existingInvoiceName ? (
+                  <div className="flex items-center gap-2 rounded-[9px] border border-[#DBEAFE] bg-[#EFF6FF] px-4 py-3">
+                    <Paperclip className="size-4 shrink-0 text-[#3B82F6]" />
+                    {existingInvoiceUrl
+                      ? <a href={existingInvoiceUrl} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-[12.5px] font-semibold text-[#3B82F6] underline underline-offset-2">{existingInvoiceName}</a>
+                      : <span className="flex-1 truncate text-[12.5px] font-semibold text-[#3B82F6]">{existingInvoiceName}</span>
+                    }
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="shrink-0 text-[11px] font-semibold text-[#6B7280] underline hover:text-[#374151]"
+                    >
+                      Replace
                     </button>
                   </div>
                 ) : (
@@ -310,7 +399,7 @@ export function RecordPaymentDialog({
                 <label className="text-[11.5px] font-semibold text-[#5C6270]">Remarks</label>
                 <textarea
                   {...form.register('remarks')}
-                  rows={3}
+                  rows={2}
                   placeholder="Payment notes..."
                   className="w-full resize-none rounded-[9px] border border-[#E5E7EB] px-3 py-2.5 text-[12.5px] outline-none focus:border-[#4F5DF5]"
                 />
@@ -318,7 +407,8 @@ export function RecordPaymentDialog({
 
               {(mutation.isError || form.formState.errors.root) && (
                 <p className="text-[12px] font-semibold text-[#DC2626]">
-                  {form.formState.errors.root?.message ?? (mutation.error as Error).message}
+                  {form.formState.errors.root?.message
+                    ?? (mutation.error instanceof Error ? mutation.error.message : 'Something went wrong.')}
                 </p>
               )}
 
@@ -333,7 +423,8 @@ export function RecordPaymentDialog({
                 </button>
                 <button
                   type="submit"
-                  className="h-10 rounded-[9px] bg-[#059669] px-5 text-[12.5px] font-semibold text-white transition hover:bg-[#047857]"
+                  disabled={periods.length === 0 && !periodsLoading}
+                  className="h-10 rounded-[9px] bg-[#059669] px-5 text-[12.5px] font-semibold text-white transition hover:bg-[#047857] disabled:opacity-50"
                 >
                   Mark as Paid
                 </button>
@@ -343,5 +434,29 @@ export function RecordPaymentDialog({
         )}
       </div>
     </div>
+
+    {/* Image preview overlay */}
+    {previewUrl && (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-[3px]"
+        onClick={closePreview}
+      >
+        <div className="relative max-h-[90vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={closePreview}
+            className="absolute -right-3 -top-3 flex size-7 items-center justify-center rounded-full bg-white text-[#374151] shadow-md hover:bg-[#F4F5F7]"
+          >
+            <X className="size-4" />
+          </button>
+          <img
+            src={previewUrl}
+            alt="Invoice preview"
+            className="max-h-[85vh] max-w-[85vw] rounded-[10px] object-contain shadow-2xl"
+          />
+        </div>
+      </div>
+    )}
+    </>
   )
 }

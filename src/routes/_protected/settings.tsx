@@ -14,7 +14,6 @@ export const Route = createFileRoute('/_protected/settings')({ component: Settin
 const CATEGORIES: Array<{ key: ServiceOptionCategory; label: string; usedIn: string }> = [
   { key: 'build_type',       label: 'Build Type',       usedIn: 'Add / Edit Website' },
   { key: 'hosting_provider', label: 'Hosting Provider', usedIn: 'Add / Edit Website' },
-  { key: 'hosting_type',     label: 'Hosting Type',     usedIn: 'Add / Edit Website' },
   { key: 'domain_provider',  label: 'Domain Provider',  usedIn: 'Add / Edit Website' },
   { key: 'payment_mode',     label: 'Payment Mode',     usedIn: 'Record Payment' },
 ]

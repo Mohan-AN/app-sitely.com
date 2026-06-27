@@ -25,22 +25,27 @@ function mapApiErrors(
   apiErr: ApiError,
   fieldKeys: string[],
 ): { fields: Record<string, string>; form?: string } {
+  // Backend sends field_errors as { fieldName: "message" } — use directly
+  if (Object.keys(apiErr.fieldErrors).length > 0) {
+    return { fields: apiErr.fieldErrors }
+  }
+  // Fallback: errors array — match by keyword
   if (apiErr.errors?.length) {
     const fields: Record<string, string> = {}
     for (const msg of apiErr.errors) {
       const lower = msg.toLowerCase()
       const matched = fieldKeys.find((k) => lower.includes(k))
       if (matched) fields[matched] = (fields[matched] ? fields[matched] + ' · ' : '') + msg
-      else fields[fieldKeys[fieldKeys.length - 1]] = (fields[fieldKeys[fieldKeys.length - 1]] ? fields[fieldKeys[fieldKeys.length - 1]] + ' · ' : '') + msg
+      else fields[fieldKeys[fieldKeys.length - 1]] = msg
     }
     return { fields }
   }
   return { fields: {}, form: apiErr.message ?? 'Something went wrong. Please try again.' }
 }
 
-function FieldError({ msg }: { msg: string | undefined }) {
+function FieldError({ msg, center }: { msg: string | undefined; center?: boolean }) {
   if (!msg) return null
-  return <p className="text-center text-[13px] font-semibold text-red-500">{msg}</p>
+  return <p className={`text-[12px] font-semibold text-red-500${center ? ' text-center' : ''}`}>{msg}</p>
 }
 
 function LoginScreen() {
@@ -49,8 +54,6 @@ function LoginScreen() {
   const [view, setView] = useState<AuthView>('login')
 
   // Login
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loginFieldErrors, setLoginFieldErrors] = useState<Record<string, string>>({})
   const [loginFormError, setLoginFormError] = useState<string | undefined>()
@@ -70,10 +73,10 @@ function LoginScreen() {
 
   // ── Login mutation ──────────────────────────────────────────
   const loginMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: ({ email: e, password: p }: { email: string; password: string }) =>
       apiFetch<LoginResponse>('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: e, password: p }),
       }),
     onSuccess: (data) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token)
@@ -161,18 +164,25 @@ function LoginScreen() {
               <p className="text-[15px] font-medium text-[#64748B]">Sign in to continue to your workspace</p>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); loginMutation.mutate() }} className="flex flex-col gap-5" noValidate>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const fd = new FormData(e.currentTarget)
+              loginMutation.mutate({
+                email: ((fd.get('email') as string) ?? '').trim(),
+                password: (fd.get('password') as string) ?? '',
+              })
+            }} className="flex flex-col gap-5" noValidate>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="email" className="text-[11px] font-bold uppercase tracking-widest text-[#64748B]">Email address</label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setLoginFieldErrors((f) => ({ ...f, email: undefined! })); setLoginFormError(undefined) }}
+                  defaultValue=""
+                  onChange={() => { setLoginFieldErrors((f) => ({ ...f, email: undefined! })); setLoginFormError(undefined) }}
                   className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 font-semibold text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${loginFieldErrors.email ? 'border-red-400' : ''}`}
                   placeholder="name@example.com"
-                  required
-                  autoComplete="username"
+                  autoComplete="email"
                 />
                 <FieldError msg={loginFieldErrors.email} />
               </div>
@@ -182,12 +192,12 @@ function LoginScreen() {
                 <div className="relative">
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setLoginFieldErrors((f) => ({ ...f, password: undefined! })); setLoginFormError(undefined) }}
+                    defaultValue=""
+                    onChange={() => { setLoginFieldErrors((f) => ({ ...f, password: undefined! })); setLoginFormError(undefined) }}
                     className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 pr-10 font-semibold text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${loginFieldErrors.password ? 'border-red-400' : ''}`}
                     placeholder="Enter your password"
-                    required
                     autoComplete="current-password"
                   />
                   <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute bottom-0 right-3 top-0 m-auto text-[#64748B] transition hover:text-[#11141A]" aria-label={showPassword ? 'Hide password' : 'Show password'}>
@@ -195,7 +205,7 @@ function LoginScreen() {
                   </button>
                 </div>
                 <FieldError msg={loginFieldErrors.password} />
-                <FieldError msg={loginFormError} />
+                <FieldError msg={loginFormError} center />
               </div>
 
               <div className="flex items-center justify-end">
@@ -233,7 +243,7 @@ function LoginScreen() {
                   autoComplete="email"
                 />
                 <FieldError msg={recoveryEmailError} />
-                <FieldError msg={recoveryFormError} />
+                <FieldError msg={recoveryFormError} center />
               </div>
 
               <Button type="submit" disabled={forgotPasswordMutation.isPending} className="h-12 rounded-xl bg-[#4F5DF5] text-[15px] font-bold text-white shadow-sm hover:bg-[#3F4DE0]">
@@ -283,7 +293,7 @@ function LoginScreen() {
                     autoComplete="one-time-code"
                   />
                   <FieldError msg={resetFieldErrors.otp} />
-                  <FieldError msg={resetFormError} />
+                  <FieldError msg={resetFormError} center />
                 </div>
 
                 <div className="flex flex-col gap-1.5">

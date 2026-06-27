@@ -68,3 +68,58 @@ export function updateWebsite(websiteId: string, input: UpdateWebsiteInput) {
 export function deleteWebsite(websiteId: string) {
   return apiFetch<void>(`/websites/${websiteId}`, { method: 'DELETE' })
 }
+
+// ── Import ────────────────────────────────────────────────────────────────────
+
+export interface ImportPreviewItem {
+  project_name: string
+  client: { mode: 'existing' | 'create'; id?: number; client_id?: string; name: string }
+  duplicate_website: { website_id: string; project_name: string } | null
+  billing_records?: { total: number; paid: number; overdue: number }
+  rate_changes?: number
+}
+
+export interface ImportRowError {
+  row_number: number
+  source: 'websites' | 'paymentHistory' | 'rateHistory'
+  row: Record<string, string>
+  errors: Record<string, string>
+}
+
+export interface ImportValidationFailure {
+  total: number
+  validation_failed: number
+  failed: number
+  errors: ImportRowError[]
+}
+
+export interface ImportConfirmResult {
+  clients_created: number
+  websites_created: number
+  billing_imported: number
+  rate_history_imported: number
+  duplicates_skipped: number
+}
+
+export interface ImportPayload {
+  websites?: Record<string, string>[]
+  paymentHistory?: Record<string, string>[]
+  rateHistory?: Record<string, string>[]
+  skipDuplicates?: boolean
+}
+
+export type ImportPreviewData = ImportPreviewItem[] | ImportValidationFailure
+
+export function previewImport(payload: ImportPayload | FormData) {
+  return apiFetch<ImportPreviewData>('/import/websites', {
+    method: 'POST',
+    body: payload instanceof FormData ? payload : JSON.stringify(payload),
+  })
+}
+
+export function confirmImport(payload: ImportPayload | FormData) {
+  return apiFetch<ImportConfirmResult>('/import/websites/confirm', {
+    method: 'POST',
+    body: payload instanceof FormData ? payload : JSON.stringify(payload),
+  })
+}

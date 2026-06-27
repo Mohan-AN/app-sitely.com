@@ -49,15 +49,16 @@ export function ServiceOptionSelect({
 
   useEffect(() => {
     if (!open) return
-    const update = () => {
+    // Lock body scroll while dropdown is open
+    document.body.style.overflow = 'hidden'
+    const onResize = () => {
       const rect = measureTrigger()
       if (rect) setDropRect(rect)
     }
-    window.addEventListener('scroll', update, true)
-    window.addEventListener('resize', update)
+    window.addEventListener('resize', onResize)
     return () => {
-      window.removeEventListener('scroll', update, true)
-      window.removeEventListener('resize', update)
+      document.body.style.overflow = ''
+      window.removeEventListener('resize', onResize)
     }
   }, [open])
 
@@ -101,11 +102,17 @@ export function ServiceOptionSelect({
     )
   }
 
+  const DROPDOWN_MAX_H = 200 + 40 // list + footer button
+  const spaceBelow = dropRect ? window.innerHeight - dropRect.bottom - 4 : 0
+  const openUpward = dropRect ? spaceBelow < DROPDOWN_MAX_H && dropRect.top > DROPDOWN_MAX_H : false
+
   const portalStyle = dropRect
     ? {
-        position: 'absolute' as const,
-        top: dropRect.bottom + window.scrollY + 4,
-        left: dropRect.left + window.scrollX,
+        position: 'fixed' as const,
+        ...(openUpward
+          ? { bottom: window.innerHeight - dropRect.top + 4 }
+          : { top: dropRect.bottom + 4 }),
+        left: dropRect.left,
         width: dropRect.width,
         zIndex: 9999,
       }
@@ -137,9 +144,10 @@ export function ServiceOptionSelect({
           <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
             style={portalStyle}
-            className="overflow-hidden rounded-[10px] border border-[#E5E7EB] bg-white shadow-[0_10px_30px_rgba(17,20,26,.16)]"
+            className="flex flex-col overflow-hidden rounded-[10px] border border-[#E5E7EB] bg-white shadow-[0_10px_30px_rgba(17,20,26,.16)]"
           >
-            <div className="overflow-y-auto" style={{ maxHeight: 260 }}>
+            {/* Scrollable options list */}
+            <div className="overflow-y-auto" style={{ maxHeight: Math.min(200, spaceBelow - 44) }}>
               {options.length === 0 && (
                 <p className="px-3 py-2 text-[12px] text-[#8A8F98]">No options yet — add one below.</p>
               )}
@@ -154,16 +162,17 @@ export function ServiceOptionSelect({
                   <span className={opt.name === value ? 'font-semibold text-[#4F5DF5]' : ''}>{opt.name}</span>
                 </button>
               ))}
-
-              <button
-                type="button"
-                onClick={() => { setOpen(false); setAddingNew(true) }}
-                className="flex w-full items-center gap-2 border-t border-[#EEF0F2] px-3 py-[9px] text-left text-[12.5px] font-semibold text-[#4F5DF5] transition hover:bg-[#EEEFFE]"
-              >
-                <Plus className="size-3.5" />
-                Add new option…
-              </button>
             </div>
+
+            {/* Pinned footer — always visible */}
+            <button
+              type="button"
+              onClick={() => { setOpen(false); setAddingNew(true) }}
+              className="flex w-full shrink-0 items-center gap-2 border-t border-[#EEF0F2] px-3 py-[9px] text-left text-[12.5px] font-semibold text-[#4F5DF5] transition hover:bg-[#EEEFFE]"
+            >
+              <Plus className="size-3.5" />
+              Add new option…
+            </button>
           </div>
         </>,
         document.body,

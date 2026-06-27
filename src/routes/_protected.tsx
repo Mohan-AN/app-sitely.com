@@ -5,9 +5,10 @@ import { authMeQueryOptions } from '#/lib/auth'
 import { queryClient } from '#/lib/query-client'
 
 export const Route = createFileRoute('/_protected')({
-  beforeLoad: async ({ location }) => {
+  beforeLoad: ({ location }) => {
     if (typeof window === 'undefined') return
 
+    // Redirect immediately if no token — no network call needed.
     if (!localStorage.getItem(ACCESS_TOKEN_KEY)) {
       throw redirect({
         to: '/login',
@@ -15,12 +16,7 @@ export const Route = createFileRoute('/_protected')({
       })
     }
 
-    // If we already have a valid cached user, skip the network call entirely
-    const cached = queryClient.getQueryData(authMeQueryOptions.queryKey)
-    if (cached) return
-
-    // If the query already failed recently (within 10s), redirect immediately
-    // without hammering the API on every navigation
+    // If the auth query previously failed (within 10s), redirect without retrying.
     const state = queryClient.getQueryState(authMeQueryOptions.queryKey)
     if (state?.status === 'error' && state.errorUpdatedAt > Date.now() - 10_000) {
       throw redirect({
@@ -28,15 +24,8 @@ export const Route = createFileRoute('/_protected')({
         search: { redirect: location.pathname },
       })
     }
-
-    try {
-      await queryClient.ensureQueryData(authMeQueryOptions)
-    } catch {
-      throw redirect({
-        to: '/login',
-        search: { redirect: location.pathname },
-      })
-    }
+    // Auth is verified in the background by the sidebar's useQuery(authMeQueryOptions).
+    // apiFetch handles 401 by clearing tokens and redirecting to /login automatically.
   },
   component: ProtectedLayout,
 })

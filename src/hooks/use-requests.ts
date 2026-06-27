@@ -20,6 +20,7 @@ export function useCreateRequest(websiteId: string) {
     mutationFn: (input: CreateRequestInput) => createRequest(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEBSITE_REQUESTS, websiteId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEBSITE_TIMELINE, websiteId] })
       toast.success('Request submitted.')
     },
   })
@@ -32,6 +33,7 @@ export function useUpdateRequest(websiteId: string) {
       updateRequest(websiteId, requestId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEBSITE_REQUESTS, websiteId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEBSITE_TIMELINE, websiteId] })
       toast.success('Request updated.')
     },
   })

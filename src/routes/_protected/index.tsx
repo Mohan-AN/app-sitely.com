@@ -6,7 +6,7 @@ import { useDebounce } from '#/hooks/use-debounce'
 import { WebsitesFiltersBar } from '#/components/websites/websites-filters'
 import { WebsitesTable } from '#/components/websites/websites-table'
 import { WebsitesTabs, TAB_FILTERS, type WebsitesTabKey } from '#/components/websites/websites-tabs'
-import { useWebsites, useWebsiteStats, useClientOptions, useDeleteWebsite, useCurrentBillingId } from '#/hooks/use-websites'
+import { useWebsites, useWebsiteStats, useClientOptions, useDeleteWebsite } from '#/hooks/use-websites'
 import { useSettings } from '#/hooks/use-settings'
 import { ConfirmDialog } from '#/components/ui/confirm-dialog'
 import { RecordPaymentDialog } from '#/components/websites/record-payment-dialog'
@@ -56,7 +56,7 @@ export const Route = createFileRoute('/_protected/')({
 })
 
 function isWebsiteTab(value: unknown): value is WebsitesTabKey {
-  return value === 'all' || value === 'inProgress' || value === 'maintenanceOverdue' || value === 'domainOverdue' || value === 'dueSoon'
+  return value === 'all' || value === 'inProgress' || value === 'dueSoon'
 }
 
 function pickFilters(search: WebsitesSearch): WebsitesFilters {
@@ -91,7 +91,6 @@ function WebsitesPage() {
   const [paymentSite, setPaymentSite] = useState<Website | null>(null)
   const [requestSite, setRequestSite] = useState<Website | null>(null)
   const [sitePickerMode, setSitePickerMode] = useState<'payment' | 'request' | null>(null)
-  const { data: paymentSiteBillingId } = useCurrentBillingId(paymentSite ? String(paymentSite.id) : '')
 
   useEffect(() => {
     setSearchQuery(routeSearch.search ?? '')
@@ -167,6 +166,12 @@ function WebsitesPage() {
             Add Request
           </button>
           <Link
+            to="/websites/import"
+            className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#E5E7EB] bg-white px-4 text-[12.5px] font-semibold text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5]"
+          >
+            Import
+          </Link>
+          <Link
             to="/websites/new"
             search={{ clientId: undefined }}
             className="inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-[#4F5DF5] px-4 text-[12.5px] font-semibold text-white transition hover:bg-[#3F4DE0]"
@@ -207,9 +212,6 @@ function WebsitesPage() {
             >
               Filter
             </button>
-            <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#E5E7EB] bg-white px-3 text-[12.5px] font-semibold text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5]">
-              Export
-            </button>
           </div>
         </div>
 
@@ -222,6 +224,7 @@ function WebsitesPage() {
         <WebsitesTable
           websites={websitesQuery.data?.items}
           isLoading={websitesQuery.isLoading}
+          isFetching={websitesQuery.isFetching}
           isError={websitesQuery.isError}
           error={websitesQuery.error as Error | null}
           sortBy={filters.sortBy}
@@ -265,8 +268,8 @@ function WebsitesPage() {
       {paymentSite ? (
         <RecordPaymentDialog
           websiteId={String(paymentSite.id)}
-          billingId={paymentSiteBillingId}
           projectName={paymentSite.project_name}
+          hostedDate={paymentSite.hosted_date ?? null}
           maintenanceAmount={paymentSite.maintenance_amount}
           open
           onOpenChange={(open) => { if (!open) setPaymentSite(null) }}
@@ -282,6 +285,7 @@ function WebsitesPage() {
           onOpenChange={(open) => { if (!open) setRequestSite(null) }}
         />
       ) : null}
+
     </main>
   )
 }

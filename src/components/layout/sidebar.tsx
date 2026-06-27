@@ -47,7 +47,7 @@ export function AppLayoutSidebar() {
 
   const overdueCount = stats ? stats.maintenance_overdue_count + stats.domain_overdue_count : 0
   const isWebsitesActive = pathname === '/' || pathname.startsWith('/websites')
-  const isClientsActive = pathname.startsWith('/clients')
+  const isClientsActive  = pathname.startsWith('/clients')
 
   return (
     <aside

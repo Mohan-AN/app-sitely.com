@@ -1,51 +1,70 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import {
-  CalendarCheck2, CheckCircle2,
-  ExternalLink, XCircle, ChevronRight,
-} from 'lucide-react'
-import { Button } from '#/components/ui/button'
-import { ConfirmDialog } from '#/components/ui/confirm-dialog'
-import { Input } from '#/components/ui/input'
+import { ExternalLink, ChevronRight, Pencil } from 'lucide-react'
 import { Skeleton } from '#/components/ui/skeleton'
 import { formatCurrency, formatDate } from '#/lib/format'
 import { cn } from '#/lib/utils'
-import { useUpdateWebsite, useWebsiteTimeline } from '#/hooks/use-websites'
+import { useWebsiteTimeline } from '#/hooks/use-websites'
 import { useRequests } from '#/hooks/use-requests'
 import type { TimelineEvent, TimelinePeriod, TimelineProfitSummary, WebsiteDetail as WebsiteDetailType } from './types'
 import type { WebsiteRequest } from '#/lib/requests-api'
+import { EditRequestDialog } from './edit-request-dialog'
+import { AttachInvoiceDialog } from './attach-invoice-dialog'
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export function WebsiteDetail({ website }: { website: WebsiteDetailType }) {
   const websiteId = String(website.id)
 
-  const defaultYear = website.hosted_date
-    ? new Date(website.hosted_date).getFullYear()
-    : new Date().getFullYear()
+  // Billing year starts on the month the site was hosted (e.g., Jul → billing year Jul–Jun)
+  const hostedDate = website.hosted_date ? new Date(website.hosted_date) : new Date()
+  const billingStartMonth = hostedDate.getMonth() // 0-indexed
+  const defaultYear = hostedDate.getFullYear()
   const [year, setYear] = useState(defaultYear)
+
+  const minYear = website.start_date
+    ? new Date(website.start_date).getFullYear()
+    : defaultYear
 
   // Single query drives both left (periods) and right (profit_summary) panels
   const timelineQuery = useWebsiteTimeline(websiteId, year)
   const timeline = timelineQuery.data
 
+  // Inject synthetic domain renewal event if backend doesn't include one
+  const periodsWithDomain = useDomainEvent(timeline?.periods, website)
+
   const requestsQuery = useRequests(websiteId)
   const requests = requestsQuery.data?.items ?? []
 
+  const [editingRequest, setEditingRequest] = useState<import('#/lib/requests-api').WebsiteRequest | null>(null)
+
   return (
-    <div className="grid items-stretch gap-[20px] xl:grid-cols-[370px_1fr]">
+    <div className="grid items-stretch gap-[14px] lg:grid-cols-[370px_1fr]">
       {/* Left wrapper has no intrinsic height — right card sets the row height.
           TimelineCard fills the wrapper with absolute positioning and scrolls inside. */}
       <div className="relative">
         <TimelineCard
-          periods={timeline?.periods}
+          websiteId={websiteId}
+          periods={periodsWithDomain}
           isLoading={timelineQuery.isLoading}
           isError={timelineQuery.isError}
           isFetching={timelineQuery.isFetching}
           year={year}
+          minYear={minYear}
+          billingStartMonth={billingStartMonth}
           onYearChange={setYear}
+          onEditRequest={setEditingRequest}
         />
       </div>
+
+      {editingRequest && (
+        <EditRequestDialog
+          websiteId={websiteId}
+          request={editingRequest}
+          open={!!editingRequest}
+          onOpenChange={(o) => { if (!o) setEditingRequest(null) }}
+        />
+      )}
 
       {/* Right: info panel — natural height, determines row height */}
       <div className="overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(17,20,26,.04)]">
@@ -77,16 +96,14 @@ export function WebsiteDetail({ website }: { website: WebsiteDetailType }) {
         {website.hosting_provider ? (
           <InfoSection title="Hosting Details">
             <InfoGrid items={[
-              { label: 'Hosting Type', value: website.hosting_type ?? '—' },
               { label: 'Provider', value: website.hosting_provider },
               { label: 'Hosting Cost', value: website.hosting_cost ? formatCurrency(website.hosting_cost) + ' / year' : '—' },
               { label: 'Renewal Date', value: formatDate(website.hosting_renewal_date) },
             ]} />
           </InfoSection>
         ) : null}
-        <RequestsSection requests={requests} isLoading={requestsQuery.isLoading} />
+        <RequestsSection websiteId={websiteId} requests={requests} isLoading={requestsQuery.isLoading} />
         <RateHistorySection website={website} />
-        <WorkflowActionsSection website={website} />
       </div>
     </div>
   )
@@ -94,7 +111,7 @@ export function WebsiteDetail({ website }: { website: WebsiteDetailType }) {
 
 export function WebsiteDetailSkeleton() {
   return (
-    <div className="grid gap-[20px] xl:grid-cols-[370px_1fr]">
+    <div className="grid gap-[20px] lg:grid-cols-[370px_1fr]">
 
       {/* Left — timeline card */}
       <div className="overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(17,20,26,.04)]">
@@ -170,23 +187,45 @@ function periodSortKey(p: TimelinePeriod): number {
   return PERIOD_PRIORITY[p.billing?.status ?? ''] ?? 2
 }
 
-function TimelineCard({ periods, isLoading, isError, isFetching, year, onYearChange }: {
+const MONTH_ABBRS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+function parsePeriodDate(label: string): { month: number; year: number } | null {
+  const parts = label.trim().split(' ')
+  if (parts.length !== 2) return null
+  const m = MONTH_ABBRS.indexOf(parts[0])
+  const y = parseInt(parts[1])
+  return (m !== -1 && !isNaN(y)) ? { month: m, year: y } : null
+}
+
+function TimelineCard({ websiteId, periods, isLoading, isError, isFetching, year, minYear, billingStartMonth, onYearChange, onEditRequest }: {
+  websiteId: string
   periods: TimelinePeriod[] | undefined
   isLoading: boolean
   isError: boolean
   isFetching: boolean
   year: number
+  minYear: number
+  billingStartMonth: number
   onYearChange: (y: number) => void
+  onEditRequest: (req: import('#/lib/requests-api').WebsiteRequest) => void
 }) {
-  // Header range uses chronological first/last (original API order), not display order
-  const headerLabel = periods?.length
-    ? `${periods[0].period_label} — ${periods[periods.length - 1].period_label}`
-    : String(year)
+  // Filter periods to exactly the 12-month billing window for `year`
+  // Billing year Y: months [billingStartMonth, 11] of year Y + months [0, billingStartMonth-1] of year Y+1
+  const yearPeriods = periods?.filter((p) => {
+    const d = parsePeriodDate(p.period_label)
+    if (!d) return false
+    if (d.year === year && d.month >= billingStartMonth) return true
+    if (d.year === year + 1 && d.month < billingStartMonth) return true
+    return false
+  }) ?? []
+
+  // Header: "Jul 2024 — Jun 2025" computed from year + billing window
+  const endMonth = billingStartMonth === 0 ? 11 : billingStartMonth - 1
+  const endYear  = billingStartMonth === 0 ? year : year + 1
+  const headerLabel = `${MONTH_ABBRS[billingStartMonth]} ${year} — ${MONTH_ABBRS[endMonth]} ${endYear}`
 
   // Display order: overdue first, then pending (due soon), then rest in original order
-  const sortedPeriods = periods
-    ? [...periods].sort((a, b) => periodSortKey(a) - periodSortKey(b))
-    : []
+  const sortedPeriods = [...yearPeriods].sort((a, b) => periodSortKey(a) - periodSortKey(b))
 
   return (
     <div className="absolute inset-0 flex flex-col overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_1px_2px_rgba(17,20,26,.04)]">
@@ -194,7 +233,7 @@ function TimelineCard({ periods, isLoading, isError, isFetching, year, onYearCha
       <div className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] px-[18px] py-[14px]">
         <div className="text-[14px] font-bold text-[#11141A]">{headerLabel}</div>
         <div className="flex gap-1">
-          <button type="button" onClick={() => onYearChange(year - 1)} disabled={isFetching}
+          <button type="button" onClick={() => onYearChange(year - 1)} disabled={isFetching || year <= minYear}
             className="flex size-[27px] items-center justify-center rounded-[7px] border border-[#E5E7EB] bg-white text-[12px] text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5] disabled:opacity-40">‹</button>
           <button type="button" onClick={() => onYearChange(year + 1)} disabled={isFetching}
             className="flex size-[27px] items-center justify-center rounded-[7px] border border-[#E5E7EB] bg-white text-[12px] text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5] disabled:opacity-40">›</button>
@@ -236,7 +275,7 @@ function TimelineCard({ periods, isLoading, isError, isFetching, year, onYearCha
           </div>
         ) : (
           sortedPeriods.map((period) => (
-            <PeriodRow key={period.period_key} period={period} />
+            <PeriodRow key={period.period_key} period={period} websiteId={websiteId} onEditRequest={onEditRequest} />
           ))
         )}
       </div>
@@ -246,42 +285,171 @@ function TimelineCard({ periods, isLoading, isError, isFetching, year, onYearCha
 
 // ─── Period Row ────────────────────────────────────────────────────────────────
 
-function PeriodRow({ period }: { period: TimelinePeriod }) {
+function PeriodRow({ period, websiteId, onEditRequest }: {
+  period: TimelinePeriod
+  websiteId: string
+  onEditRequest: (req: import('#/lib/requests-api').WebsiteRequest) => void
+}) {
   const hasData = (period.events?.length ?? 0) > 0
   const [open, setOpen] = useState(hasData)
+  const [attachOpen, setAttachOpen] = useState(false)
 
   const billing = period.billing
   const { iconBg, iconContent, amtClr } = getBillingDisplay(billing?.status ?? '')
 
+  // Backend writes "· unpaid" in subtitle for unpaid features; paid ones say "· paid ..."
+  const isFeatureUnpaid = (ev: TimelineEvent) =>
+    ev.event_type === 'feature' && !!ev.amount && !!ev.subtitle?.toLowerCase().includes('unpaid')
+
+  const unpaidFeatureTotal = period.events
+    .filter(isFeatureUnpaid)
+    .reduce((sum, ev) => sum + Number(ev.amount ?? 0), 0)
+  const paidFeatureTotal = period.events
+    .filter((ev) => ev.event_type === 'feature' && !!ev.amount && !isFeatureUnpaid(ev))
+    .reduce((sum, ev) => sum + Number(ev.amount ?? 0), 0)
+
+  const maintenanceAmount = Number(billing?.amount ?? 0)
+  const periodTotal = maintenanceAmount + paidFeatureTotal + unpaidFeatureTotal
+
+  // When maintenance is paid but features are unpaid, show two separate amounts
+  const maintenancePaid = billing?.status === 'paid'
+  const hasMixedSettlement = maintenancePaid && unpaidFeatureTotal > 0
+
+  const paidTotal = maintenanceAmount + paidFeatureTotal
+  const periodTotalDisplay = periodTotal > 0
+    ? `₹${periodTotal.toLocaleString('en-IN')}`
+    : (billing?.display_amount ?? '—')
+  const paidTotalDisplay = `₹${paidTotal.toLocaleString('en-IN')}`
+  const unpaidTotalDisplay = `₹${unpaidFeatureTotal.toLocaleString('en-IN')}`
+
+  const canAttachInvoice = billing?.status === 'paid' && !billing.invoice_file_url
+
   return (
     <div className="border-b border-[#EEF0F2] last:border-b-0">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-[10px] px-[18px] py-[13px] transition hover:bg-[#FAFBFC]"
-      >
-        <ChevronRight className={cn('size-[14px] shrink-0 text-[#8A8F98] transition-transform', open && 'rotate-90')} />
-        <span className={cn('flex-1 text-left text-[13px] font-semibold', hasData ? 'text-[#11141A]' : 'text-[#94A3B8]')}>
-          {period.period_label}
-        </span>
-        <div className="flex items-center gap-[6px]">
-          <span className={cn('text-[12.5px]', amtClr)}>
-            {billing?.display_amount ?? '—'}
+      <div className="flex w-full items-center gap-[10px] px-[18px] py-[13px]">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex flex-1 items-center gap-[10px] transition hover:opacity-80"
+        >
+          <ChevronRight className={cn('size-[14px] shrink-0 text-[#8A8F98] transition-transform', open && 'rotate-90')} />
+          <span className={cn('flex-1 text-left text-[13px] font-semibold', hasData ? 'text-[#11141A]' : 'text-[#94A3B8]')}>
+            {period.period_label}
           </span>
-          {iconBg ? (
-            <span className={cn('flex size-[19px] items-center justify-center rounded-full text-[10px] font-bold text-white', iconBg)}>
-              {iconContent}
-            </span>
-          ) : null}
+        </button>
+        <div className="flex items-center gap-[6px]">
+          {hasMixedSettlement ? (
+            <>
+              {/* Paid portion with green ✓ */}
+              <span className="text-[12.5px] font-bold text-[#059669]">{paidTotalDisplay}</span>
+              <span className="flex size-[19px] items-center justify-center rounded-full bg-[#059669] text-[10px] font-bold text-white">✓</span>
+              {/* Unpaid feature portion with amber badge */}
+              <span className="flex items-center gap-[3px] rounded-full bg-[#FEF3C7] px-[7px] py-[2px] text-[10.5px] font-bold text-[#D97706]">
+                +{unpaidTotalDisplay} feature unpaid
+              </span>
+            </>
+          ) : (
+            <>
+              <span className={cn('text-[12.5px]', amtClr)}>{periodTotalDisplay}</span>
+              {iconBg && (
+                <span className={cn('flex size-[19px] items-center justify-center rounded-full text-[10px] font-bold text-white', iconBg)}>
+                  {iconContent}
+                </span>
+              )}
+            </>
+          )}
         </div>
-      </button>
-      {open && hasData ? (
+      </div>
+
+      {attachOpen && billing && (
+        <AttachInvoiceDialog
+          websiteId={websiteId}
+          billingId={billing.billing_id}
+          periodLabel={period.period_label}
+          open={attachOpen}
+          onOpenChange={setAttachOpen}
+        />
+      )}
+
+      {open && hasData && (
         <div className="pb-4 pl-[43px] pr-[18px] pt-0">
-          {period.events.map((ev, i) => <EventRow key={i} ev={ev} />)}
+          {period.events.map((ev, i) => (
+            <EventRow
+              key={i}
+              ev={ev}
+              invoiceUrl={ev.event_type === 'payment' ? billing?.invoice_file_url : null}
+              onAttachInvoice={ev.event_type === 'payment' && canAttachInvoice ? () => setAttachOpen(true) : undefined}
+              onEditRequest={onEditRequest}
+            />
+          ))}
         </div>
-      ) : null}
+      )}
     </div>
   )
+}
+
+// ─── Domain event injection ───────────────────────────────────────────────────
+// Backend doesn't generate domain renewal events — build one from website data.
+
+function useDomainEvent(
+  periods: TimelinePeriod[] | undefined,
+  website: import('./types').WebsiteDetail,
+): TimelinePeriod[] | undefined {
+  if (!periods || !website.domain_renewal_date || website.domain_handled_by !== 'our_side') return periods
+
+  const renewalDate = new Date(website.domain_renewal_date)
+  const renewalMonth = renewalDate.getMonth()   // 0-indexed
+  const renewalYear  = renewalDate.getFullYear()
+  const renewalLabel = `${MONTH_ABBRS[renewalMonth]} ${renewalYear}`
+
+  // Don't inject if backend already has a domain_event in that period
+  const existing = periods.find((p) => p.period_label === renewalLabel)
+  if (existing?.events.some((e) => e.event_type === 'domain_event')) return periods
+
+  // Compare calendar dates only — strip time by using date strings so DST has no effect
+  const todayStr   = new Date().toLocaleDateString('en-CA')      // YYYY-MM-DD local
+  const renewalStr = renewalDate.toLocaleDateString('en-CA')
+  const msPerDay   = 86400000
+  const diffDays   = Math.round(
+    (new Date(renewalStr).getTime() - new Date(todayStr).getTime()) / msPerDay,
+  )
+  const isOverdue = diffDays < 0
+  const isDueSoon = !isOverdue && diffDays <= 30
+
+  const syntheticEvent: TimelineEvent = {
+    event_type:     'domain_event',
+    event_date:     website.domain_renewal_date,
+    icon_code:      'D',
+    icon_text:      'D',
+    icon_color:     isOverdue ? 'red' : isDueSoon ? 'amber' : 'purple',
+    title:          isOverdue
+      ? `Domain overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''}`
+      : isDueSoon
+        ? `Domain due in ${diffDays} day${diffDays !== 1 ? 's' : ''}`
+        : `Domain renewal`,
+    subtitle:       [website.domain_name, website.domain_provider].filter(Boolean).join(' · ') || null,
+    display_amount: website.domain_cost ? `₹${Number(website.domain_cost).toLocaleString('en-IN')} / year` : null,
+  }
+
+  if (existing) {
+    // Period exists — prepend the domain event
+    return periods.map((p) =>
+      p.period_label === renewalLabel
+        ? { ...p, events: [syntheticEvent, ...p.events] }
+        : p,
+    )
+  }
+
+  // Period doesn't exist (domain renewal month has no billing activity) — create it
+  const newPeriod: TimelinePeriod = {
+    period_key:   `domain-${renewalLabel}`,
+    period_label: renewalLabel,
+    period_start: website.domain_renewal_date,
+    period_end:   website.domain_renewal_date,
+    billing:      null,
+    events:       [syntheticEvent],
+  }
+  return [...periods, newPeriod]
 }
 
 function getBillingDisplay(status: string): { iconBg: string; iconContent: string; amtClr: string } {
@@ -307,19 +475,110 @@ const ICON_COLOR_MAP: Record<string, string> = {
   gray:   'bg-[#9CA3AF]',
 }
 
-function EventRow({ ev }: { ev: TimelineEvent }) {
+function EventRow({ ev, invoiceUrl, onAttachInvoice, onEditRequest }: {
+  ev: TimelineEvent
+  invoiceUrl?: string | null
+  onAttachInvoice?: () => void
+  onEditRequest: (req: import('#/lib/requests-api').WebsiteRequest) => void
+}) {
   const iconBg = ICON_COLOR_MAP[ev.icon_color] ?? 'bg-[#9CA3AF]'
 
+  // ── Payment event — normal row with inline invoice action ────────────────
+  if (ev.event_type === 'payment') {
+    const subtitleClean = ev.subtitle
+      ?.replace(/\s*[·-]?\s*invoice (attached|not attached)/i, '')
+      .trim() ?? null
+
+    return (
+      <div className="group flex items-start gap-[9px] py-[6px]">
+        <div className="mt-[1px] flex size-[22px] shrink-0 items-center justify-center rounded-[6px] bg-[#10B981] text-[11px] font-bold text-white">
+          {ev.icon_text}
+        </div>
+        <div className="flex-1">
+          <div className="text-[13.5px] font-semibold text-[#111827]">{ev.title}</div>
+          {subtitleClean && (
+            <div className="mt-[1px] flex items-center gap-2 text-[12px] text-[#9CA3AF]">
+              <span>{subtitleClean}</span>
+              {invoiceUrl ? (
+                <a
+                  href={invoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-[#4F5DF5] underline underline-offset-2 hover:text-[#3F4DE0]"
+                >
+                  · invoice attached
+                </a>
+              ) : onAttachInvoice ? (
+                <button
+                  type="button"
+                  onClick={onAttachInvoice}
+                  className="font-medium text-[#9CA3AF] underline underline-offset-2 hover:text-[#4F5DF5]"
+                >
+                  · invoice not attached
+                </button>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── All other events ──────────────────────────────────────────────────────
+  const subtitleNode = ev.subtitle
+    ? <div className="mt-[1px] text-[12px] text-[#9CA3AF]">{ev.subtitle}</div>
+    : null
+
+  const isRequest = ev.event_type === 'bug' || ev.event_type === 'feature'
+  const editableRequest: import('#/lib/requests-api').WebsiteRequest | null = isRequest && ev.meta?.request_id
+    ? {
+        request_id:        String(ev.meta.request_id),
+        website_id:        String(ev.meta.website_id ?? ''),
+        type:              ev.event_type as 'bug' | 'feature',
+        title:             String(ev.meta.title ?? ev.title),
+        description:       ev.meta.description != null ? String(ev.meta.description) : null,
+        status:            String(ev.meta.status ?? 'open') as import('#/lib/requests-api').RequestStatus,
+        requested_date:    ev.meta.requested_date != null ? String(ev.meta.requested_date) : null,
+        delivered_date:    ev.meta.delivered_date != null ? String(ev.meta.delivered_date) : null,
+        cost:              ev.meta.cost != null ? String(ev.meta.cost) : null,
+        payment_status:    ev.meta.payment_status != null ? String(ev.meta.payment_status) : null,
+        payment_date:      ev.meta.payment_date != null ? String(ev.meta.payment_date) : null,
+        invoice_file_url:  ev.meta.invoice_file_url != null ? String(ev.meta.invoice_file_url) : null,
+        invoice_file_name: ev.meta.invoice_file_name != null ? String(ev.meta.invoice_file_name) : null,
+        created_at:        String(ev.meta.created_at ?? ev.event_date),
+        updated_at:        String(ev.meta.updated_at ?? ev.event_date),
+        reported_by:       String(ev.meta.reported_by ?? ''),
+      }
+    : null
+
   return (
-    <div className="flex items-start gap-[9px] py-[6px]">
+    <div className="group flex items-start gap-[9px] py-[6px]">
       <div className={cn('mt-[1px] flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-[11px] font-bold text-white', iconBg)}>
         {ev.icon_text}
       </div>
       <div className="flex-1">
         <div className="text-[13.5px] font-semibold text-[#111827]">{ev.title}</div>
-        {ev.subtitle ? <div className="mt-[1px] text-[12px] text-[#9CA3AF]">{ev.subtitle}</div> : null}
-        {ev.display_amount ? <div className="mt-[2px] text-[11.5px] font-bold text-[#4F5DF5]">{ev.display_amount}</div> : null}
+        {subtitleNode}
+        {ev.display_amount && <div className="mt-[2px] text-[11.5px] font-bold text-[#4F5DF5]">{ev.display_amount}</div>}
       </div>
+      {editableRequest && (() => {
+        const isUnpaid = ev.event_type === 'feature' && ev.subtitle?.toLowerCase().includes('unpaid')
+        return (
+          <button
+            type="button"
+            onClick={() => onEditRequest(editableRequest)}
+            title="Edit request"
+            className={cn(
+              'mt-[1px] flex size-[22px] shrink-0 items-center justify-center rounded-[6px] transition hover:bg-[#F0F1FF] hover:text-[#4F5DF5]',
+              isUnpaid
+                ? 'text-[#D97706] opacity-100'
+                : 'text-[#C4C9D4] opacity-0 group-hover:opacity-100',
+            )}
+          >
+            <Pencil className="size-[12px]" />
+          </button>
+        )
+      })()}
     </div>
   )
 }
@@ -398,7 +657,9 @@ function InfoGrid({ items }: { items: { label: string; value: React.ReactNode }[
 
 // ─── Requests Section ─────────────────────────────────────────────────────────
 
-function RequestsSection({ requests, isLoading }: { requests: WebsiteRequest[]; isLoading: boolean }) {
+function RequestsSection({ websiteId, requests, isLoading }: { websiteId: string; requests: WebsiteRequest[]; isLoading: boolean }) {
+  const [editingRequest, setEditingRequest] = useState<WebsiteRequest | null>(null)
+
   const statusConfig: Record<string, { label: string; cls: string }> = {
     open:        { label: 'Pending',     cls: 'bg-[#F3F4F6] text-[#6B7280]' },
     in_progress: { label: 'In Progress', cls: 'bg-[#FEF3C7] text-[#D97706]' },
@@ -407,35 +668,53 @@ function RequestsSection({ requests, isLoading }: { requests: WebsiteRequest[]; 
   }
 
   return (
-    <div className="border-b border-[#EEF0F2] p-[16px_18px]">
-      <div className="mb-3 text-[11.5px] font-bold uppercase tracking-[.04em] text-[#8A8F98]">
-        Requests {isLoading ? '' : `(${requests.length})`}
-      </div>
-      {isLoading ? (
-        <div className="flex flex-col gap-2"><Skeleton className="h-8 rounded" /><Skeleton className="h-8 rounded" /></div>
-      ) : requests.length === 0 ? (
-        <p className="text-[12.5px] text-[#8A8F98]">No requests yet.</p>
-      ) : (
-        <div>
-          {requests.map((req, i) => {
-            const status = statusConfig[req.status] ?? statusConfig.open!
-            return (
-              <div key={req.request_id}
-                className={cn('flex items-center gap-[9px] py-[9px]', i < requests.length - 1 && 'border-b border-[#EEF0F2]')}>
-                <div className={cn('flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-[11px] font-bold text-white',
-                  req.type === 'bug' ? 'bg-[#EF4444]' : 'bg-[#3B82F6]')}>
-                  {req.type === 'bug' ? 'B' : 'F'}
-                </div>
-                <div className="flex-1 text-[12.5px] text-[#5C6270]">{req.title}</div>
-                <span className={cn('rounded-[6px] px-[9px] py-[3px] text-[10.5px] font-bold uppercase', status.cls)}>
-                  {status.label}
-                </span>
-              </div>
-            )
-          })}
+    <>
+      <div className="border-b border-[#EEF0F2] p-[16px_18px]">
+        <div className="mb-3 text-[11.5px] font-bold uppercase tracking-[.04em] text-[#8A8F98]">
+          Requests {isLoading ? '' : `(${requests.length})`}
         </div>
+        {isLoading ? (
+          <div className="flex flex-col gap-2"><Skeleton className="h-8 rounded" /><Skeleton className="h-8 rounded" /></div>
+        ) : requests.length === 0 ? (
+          <p className="text-[12.5px] text-[#8A8F98]">No requests yet.</p>
+        ) : (
+          <div>
+            {requests.map((req, i) => {
+              const status = statusConfig[req.status] ?? statusConfig.open!
+              return (
+                <button
+                  key={req.request_id}
+                  type="button"
+                  onClick={() => setEditingRequest(req)}
+                  className={cn(
+                    'flex w-full items-center gap-[9px] rounded-[8px] px-1 py-[9px] text-left transition hover:bg-[#F7F8FA]',
+                    i < requests.length - 1 && 'border-b border-[#EEF0F2]',
+                  )}
+                >
+                  <div className={cn('flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-[11px] font-bold text-white',
+                    req.type === 'bug' ? 'bg-[#EF4444]' : 'bg-[#3B82F6]')}>
+                    {req.type === 'bug' ? 'B' : 'F'}
+                  </div>
+                  <div className="flex-1 text-[12.5px] text-[#5C6270]">{req.title}</div>
+                  <span className={cn('rounded-[6px] px-[9px] py-[3px] text-[10.5px] font-bold uppercase', status.cls)}>
+                    {status.label}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {editingRequest && (
+        <EditRequestDialog
+          websiteId={websiteId}
+          request={editingRequest}
+          open={!!editingRequest}
+          onOpenChange={(o) => { if (!o) setEditingRequest(null) }}
+        />
       )}
-    </div>
+    </>
   )
 }
 
@@ -460,101 +739,6 @@ function RateHistorySection({ website }: { website: WebsiteDetailType }) {
   )
 }
 
-// ─── Workflow Actions ─────────────────────────────────────────────────────────
-
-function WorkflowActionsSection({ website }: { website: WebsiteDetailType }) {
-  const [markLiveOpen, setMarkLiveOpen] = useState(false)
-  const [discontinueOpen, setDiscontinueOpen] = useState(false)
-  const [liveUrl, setLiveUrl] = useState(website.url ?? '')
-  const [liveHostedDate, setLiveHostedDate] = useState(website.hosted_date ?? '')
-  const [liveRenewalDate, setLiveRenewalDate] = useState(website.current_billing_due_date ?? '')
-  const updateMutation = useUpdateWebsite(String(website.id))
-
-  const isInProgress = website.website_status === 'In Progress'
-  const isOnHold = website.website_status === 'On Hold'
-  const showMarkLive = isInProgress || isOnHold
-  const showDiscontinue = website.allowed_actions.includes('discontinue')
-  const showTransfer = website.allowed_actions.includes('mark-transfer-completed')
-
-  if (!showMarkLive && !showDiscontinue && !showTransfer) return null
-
-  return (
-    <div className="border-b border-[#EEF0F2] p-[16px_18px]">
-      <div className="mb-3 text-[11.5px] font-bold uppercase tracking-[.04em] text-[#8A8F98]">Actions</div>
-      <div className="flex flex-col gap-2">
-        {showMarkLive ? (
-          <div>
-            <ActionBtn icon={<CheckCircle2 className="size-4" />} label="Mark as Live"
-              disabled={updateMutation.isPending} onClick={() => setMarkLiveOpen((o) => !o)} />
-            {markLiveOpen ? (
-              <div className="mt-2 grid gap-3 rounded-[10px] border border-[#E5E7EB] bg-[#FAFBFC] p-4">
-                <label className="grid gap-1 text-[12px] font-semibold text-[#5C6270]">
-                  URL <span className="text-[#DC2626]">*</span>
-                  <Input placeholder="https://example.com" value={liveUrl} onChange={(e) => setLiveUrl(e.target.value)} className="h-9 rounded-[8px] border-[#E5E7EB] text-[12px]" />
-                </label>
-                <label className="grid gap-1 text-[12px] font-semibold text-[#5C6270]">
-                  Hosted Date <span className="text-[#DC2626]">*</span>
-                  <Input type="date" value={liveHostedDate} onChange={(e) => setLiveHostedDate(e.target.value)} className="h-9 rounded-[8px] border-[#E5E7EB] text-[12px]" />
-                </label>
-                <label className="grid gap-1 text-[12px] font-semibold text-[#5C6270]">
-                  Renewal Date <span className="text-[#DC2626]">*</span>
-                  <Input type="date" value={liveRenewalDate} onChange={(e) => setLiveRenewalDate(e.target.value)} className="h-9 rounded-[8px] border-[#E5E7EB] text-[12px]" />
-                </label>
-                <Button
-                  disabled={updateMutation.isPending || !liveUrl || !liveHostedDate || !liveRenewalDate}
-                  className="h-9 rounded-[8px] bg-[#4F5DF5] text-[12.5px] text-white hover:bg-[#3F4DE0]"
-                  onClick={() => updateMutation.mutate({ websiteStatus: 'Live', maintenanceStatus: 'Active', url: liveUrl, hostedDate: liveHostedDate, renewalDate: liveRenewalDate })}
-                >
-                  {updateMutation.isPending ? 'Saving…' : 'Mark as Live'}
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {showTransfer ? (
-          <ActionBtn icon={<CalendarCheck2 className="size-4" />} label="Mark Transfer Completed"
-            disabled={updateMutation.isPending}
-            onClick={() => updateMutation.mutate({ transferCompleted: true })} />
-        ) : null}
-
-        {showDiscontinue ? (
-          <div>
-            <ActionBtn icon={<XCircle className="size-4" />} label="Discontinue" destructive onClick={() => setDiscontinueOpen(true)} />
-            <ConfirmDialog
-              open={discontinueOpen}
-              onOpenChange={setDiscontinueOpen}
-              title="Discontinue Website"
-              description="This will mark the website as Discontinued and cancel maintenance. This action is final."
-              confirmLabel="Discontinue"
-              onConfirm={() => { updateMutation.mutate({ websiteStatus: 'Discontinued', maintenanceStatus: 'Cancelled' }); setDiscontinueOpen(false) }}
-              isPending={updateMutation.isPending}
-            />
-          </div>
-        ) : null}
-      </div>
-      {updateMutation.isError ? (
-        <p className="mt-2 text-[12px] text-[#DC2626]">{(updateMutation.error as Error).message}</p>
-      ) : null}
-    </div>
-  )
-}
-
-function ActionBtn({ icon, label, destructive, disabled, onClick }: {
-  icon: React.ReactNode; label: string; destructive?: boolean; disabled?: boolean; onClick?: () => void
-}) {
-  return (
-    <button type="button" disabled={disabled} onClick={onClick}
-      className={cn(
-        'flex w-full items-center justify-center gap-2 rounded-[9px] border px-4 py-2.5 text-[12.5px] font-semibold transition',
-        destructive ? 'border-[#FECACA] bg-[#FEF2F2] text-[#DC2626] hover:bg-[#FECACA]'
-          : 'border-[#E5E7EB] bg-white text-[#3D4250] hover:bg-[#F4F5F7]',
-        disabled && 'cursor-not-allowed opacity-50',
-      )}>
-      {icon}{label}
-    </button>
-  )
-}
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 

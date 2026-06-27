@@ -35,7 +35,6 @@ const websiteFormSchema = z.object({
   platform:            z.string().optional(),
   buildType:           optionalStr,
   hostingProvider:     optionalStr,
-  hostingType:         optionalStr,
   buildCost:           requiredAmt,
   websiteStatus:       z.string().optional(),
   maintenanceStatus:   z.string().optional(),
@@ -55,7 +54,6 @@ const websiteFormSchema = z.object({
   hostingCost:         optionalAmt,
   hostingRenewalDate:  optionalDate,
   lastPaymentAmount:   optionalAmt,
-  transferCompleted:   z.boolean(),
   remarks:             z.string().optional(),
 }).refine(
   (d) => {
@@ -104,7 +102,7 @@ function toCreatePayload(v: WebsiteFormValues): CreateWebsiteInput {
     startDate: v.startDate ?? null, completedDate: v.completedDate ?? null,
     hostedDate: v.hostedDate ?? null,
     buildCost: v.buildCost, buildType: v.buildType ?? null,
-    hostingProvider: v.hostingProvider ?? null, hostingType: v.hostingType ?? null,
+    hostingProvider: v.hostingProvider ?? null,
     hostingCost: v.hostingCost || undefined, hostingRenewalDate: v.hostingRenewalDate ?? null,
     domainName: v.domainName ?? null, domainHandledBy: v.domainHandledBy ?? null,
     domainProvider: v.domainProvider ?? null, domainRenewalDate: v.domainRenewalDate ?? null,
@@ -119,7 +117,7 @@ function toUpdatePayload(v: WebsiteFormValues): UpdateWebsiteInput {
     websiteStatus: v.websiteStatus, maintenanceStatus: v.maintenanceStatus,
     renewalDate: v.renewalDate ?? null,
     lastPaymentReceived: v.lastPaymentReceived ?? null,
-    lastPaymentAmount: v.lastPaymentAmount ?? null, transferCompleted: v.transferCompleted,
+    lastPaymentAmount: v.lastPaymentAmount ?? null,
   }
 }
 
@@ -137,7 +135,7 @@ function getDefaultValues(website?: WebsiteDetail, initialClientId = ''): Websit
     siteType: website?.site_type?.toLowerCase() ?? '',
     platform: website?.platform?.toLowerCase() ?? '',
     buildType: website?.build_type ?? '', hostingProvider: website?.hosting_provider ?? '',
-    hostingType: website?.hosting_type ?? '', buildCost: website?.build_cost ?? '',
+    buildCost: website?.build_cost ?? '',
     websiteStatus: website?.website_status ?? '', maintenanceStatus: website?.maintenance_status ?? '',
     startDate: toDateValue(website?.start_date) || '', completedDate: toDateValue(website?.completed_date),
     hostedDate: toDateValue(website?.hosted_date), lastInvoiceSent: toDateValue(website?.last_invoice_sent),
@@ -148,7 +146,7 @@ function getDefaultValues(website?: WebsiteDetail, initialClientId = ''): Websit
     domainCost: website?.domain_cost ?? '', billingCycle: website?.billing_cycle ?? null,
     maintenanceAmount: website?.maintenance_amount ?? '', hostingCost: website?.hosting_cost ?? '',
     hostingRenewalDate: toDateValue(website?.hosting_renewal_date),
-    lastPaymentAmount: website?.last_payment_amount ?? '', transferCompleted: website?.transfer_completed ?? false,
+    lastPaymentAmount: website?.last_payment_amount ?? '',
     remarks: website?.remarks ?? '',
   }
 }
@@ -341,15 +339,6 @@ export function WebsiteForm(props: WebsiteFormProps) {
             />
           </Field>
 
-          <Field label="Hosting Type" error={e.hostingType?.message}>
-            <ServiceOptionSelect
-              category="hosting_type"
-              value={form.watch('hostingType') ?? ''}
-              onChange={(v) => form.setValue('hostingType', v, { shouldDirty: true })}
-              placeholder="Select type"
-            />
-          </Field>
-
           <Field label="Build Cost" required error={e.buildCost?.message}>
             <MoneyInput placeholder="25000" {...form.register('buildCost')} />
           </Field>
@@ -399,20 +388,6 @@ export function WebsiteForm(props: WebsiteFormProps) {
                 <MoneyInput placeholder="0" {...form.register('lastPaymentAmount')} />
               </Field>
 
-              <Field label="Transfer Completed">
-                <Select
-                  value={form.watch('transferCompleted') ? 'yes' : 'no'}
-                  onValueChange={(v) => form.setValue('transferCompleted', v === 'yes', { shouldDirty: true })}
-                >
-                  <SelectTrigger className="h-8 w-full rounded-[8px] border-[#C9CDD6] text-[12px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
             </>
           )}
         </FormCard>

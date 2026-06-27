@@ -17,7 +17,7 @@ interface ClientsTableProps {
   onEdit?: (client: ClientWithCount) => void
 }
 
-const gridClass = 'grid grid-cols-[0.85fr_1.2fr_1.3fr_1fr_0.8fr_0.8fr_1fr_0.7fr]'
+const gridClass = 'grid grid-cols-[1.2fr_1.9fr_1fr_1.2fr_1fr_0.6fr_0.8fr_1fr_0.5fr]'
 
 const SORTABLE: Record<string, string> = {
   Company:  'company',
@@ -39,17 +39,17 @@ export function ClientsTable({ clients, isLoading, isError, error, sortBy, sortO
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* Header */}
       <div className={cn(gridClass, 'shrink-0 border-b border-[#E5E7EB] bg-[#FAFBFC] dark:border-[#1e2244] dark:bg-[#131624]')}>
-        <HeaderCell>Client ID</HeaderCell>
         <HeaderCell>Name</HeaderCell>
+        <HeaderCell>Email</HeaderCell>
+        <HeaderCell>Phone</HeaderCell>
         {Object.keys(SORTABLE).map((label) => (
           <SortableHeaderCell
             key={label}
             label={label}
-            field={SORTABLE[label]}
+            field={SORTABLE[label]!}
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSort={onSortChange}
-            className={label === 'Actions' ? 'justify-end' : undefined}
           />
         ))}
         <HeaderCell className="justify-end">Actions</HeaderCell>
@@ -74,8 +74,17 @@ export function ClientsTable({ clients, isLoading, isError, error, sortBy, sortO
                   : 'opacity-60 hover:opacity-80',
               )}
             >
-              <Cell className="font-semibold text-[#11141A] dark:text-[#E5E7EB]">{client.client_id}</Cell>
               <Cell className="font-semibold text-[#11141A] dark:text-[#E5E7EB]">{client.name}</Cell>
+              <Cell className="overflow-hidden text-[#5C6270] dark:text-[#9CA3AF]">
+                {client.email
+                  ? <a href={`mailto:${client.email}`} className="block truncate hover:text-[#4F5DF5] hover:underline">{client.email}</a>
+                  : '—'}
+              </Cell>
+              <Cell className="text-[#5C6270] dark:text-[#9CA3AF]">
+                {client.phone
+                  ? <a href={`tel:${client.phone}`} className="hover:text-[#4F5DF5] hover:underline">{client.phone}</a>
+                  : '—'}
+              </Cell>
               <Cell className="text-[#5C6270] dark:text-[#9CA3AF]">{client.company ?? '—'}</Cell>
               <Cell className="text-[#5C6270] dark:text-[#9CA3AF]">{client.city ?? '—'}</Cell>
               <Cell className="font-semibold text-[#11141A] dark:text-[#E5E7EB]">{client.website_count}</Cell>
