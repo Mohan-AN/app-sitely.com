@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_auth')({
 
 function AuthLayout() {
   return (
-    <div className="flex min-h-screen w-full bg-white text-[#11141A]">
+    <div className="flex h-screen w-full overflow-hidden bg-white text-[#11141A]">
       <div className="relative hidden w-[45%] overflow-hidden border-r border-[#D6D9FC] bg-[#EEEFFE] lg:flex lg:flex-col">
         <div className="absolute right-[-10%] top-[-20%] h-[50%] w-[80%] rounded-full border border-[#4F5DF5]/20" />
         <div className="absolute right-[-20%] top-[-10%] h-[60%] w-[90%] rounded-full border border-[#4F5DF5]/10" />
@@ -39,8 +39,8 @@ function AuthLayout() {
         </div>
       </div>
 
-      <div className="relative flex flex-1 flex-col bg-white">
-<div className="relative z-10 flex flex-1 items-center justify-center p-6 sm:p-12">
+      <div className="relative flex flex-1 flex-col overflow-y-auto bg-white">
+        <div className="relative z-10 flex flex-1 items-center justify-center p-6 sm:p-12">
           <Outlet />
         </div>
       </div>

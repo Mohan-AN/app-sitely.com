@@ -18,6 +18,7 @@ import { Route as ProtectedClientsRouteImport } from './routes/_protected/_clien
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as ProtectedClientsClientsIndexRouteImport } from './routes/_protected/_clients/clients.index'
 import { Route as ProtectedWebsitesWebsitesNewRouteImport } from './routes/_protected/_websites/websites.new'
+import { Route as ProtectedWebsitesWebsitesImportRouteImport } from './routes/_protected/_websites/websites.import'
 import { Route as ProtectedWebsitesWebsitesWebsiteIdRouteImport } from './routes/_protected/_websites/websites.$websiteId'
 import { Route as ProtectedClientsClientsNewRouteImport } from './routes/_protected/_clients/clients.new'
 import { Route as ProtectedClientsClientsClientIdRouteImport } from './routes/_protected/_clients/clients.$clientId'
@@ -67,6 +68,12 @@ const ProtectedWebsitesWebsitesNewRoute =
     path: '/websites/new',
     getParentRoute: () => ProtectedWebsitesRoute,
   } as any)
+const ProtectedWebsitesWebsitesImportRoute =
+  ProtectedWebsitesWebsitesImportRouteImport.update({
+    id: '/websites/import',
+    path: '/websites/import',
+    getParentRoute: () => ProtectedWebsitesRoute,
+  } as any)
 const ProtectedWebsitesWebsitesWebsiteIdRoute =
   ProtectedWebsitesWebsitesWebsiteIdRouteImport.update({
     id: '/websites/$websiteId',
@@ -105,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/clients/$clientId': typeof ProtectedClientsClientsClientIdRouteWithChildren
   '/clients/new': typeof ProtectedClientsClientsNewRoute
   '/websites/$websiteId': typeof ProtectedWebsitesWebsitesWebsiteIdRouteWithChildren
+  '/websites/import': typeof ProtectedWebsitesWebsitesImportRoute
   '/websites/new': typeof ProtectedWebsitesWebsitesNewRoute
   '/clients/': typeof ProtectedClientsClientsIndexRoute
   '/clients/$clientId/edit': typeof ProtectedClientsClientsClientIdEditRoute
@@ -117,6 +125,7 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof ProtectedClientsClientsClientIdRouteWithChildren
   '/clients/new': typeof ProtectedClientsClientsNewRoute
   '/websites/$websiteId': typeof ProtectedWebsitesWebsitesWebsiteIdRouteWithChildren
+  '/websites/import': typeof ProtectedWebsitesWebsitesImportRoute
   '/websites/new': typeof ProtectedWebsitesWebsitesNewRoute
   '/clients': typeof ProtectedClientsClientsIndexRoute
   '/clients/$clientId/edit': typeof ProtectedClientsClientsClientIdEditRoute
@@ -134,6 +143,7 @@ export interface FileRoutesById {
   '/_protected/_clients/clients/$clientId': typeof ProtectedClientsClientsClientIdRouteWithChildren
   '/_protected/_clients/clients/new': typeof ProtectedClientsClientsNewRoute
   '/_protected/_websites/websites/$websiteId': typeof ProtectedWebsitesWebsitesWebsiteIdRouteWithChildren
+  '/_protected/_websites/websites/import': typeof ProtectedWebsitesWebsitesImportRoute
   '/_protected/_websites/websites/new': typeof ProtectedWebsitesWebsitesNewRoute
   '/_protected/_clients/clients/': typeof ProtectedClientsClientsIndexRoute
   '/_protected/_clients/clients/$clientId/edit': typeof ProtectedClientsClientsClientIdEditRoute
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/clients/new'
     | '/websites/$websiteId'
+    | '/websites/import'
     | '/websites/new'
     | '/clients/'
     | '/clients/$clientId/edit'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/clients/new'
     | '/websites/$websiteId'
+    | '/websites/import'
     | '/websites/new'
     | '/clients'
     | '/clients/$clientId/edit'
@@ -176,6 +188,7 @@ export interface FileRouteTypes {
     | '/_protected/_clients/clients/$clientId'
     | '/_protected/_clients/clients/new'
     | '/_protected/_websites/websites/$websiteId'
+    | '/_protected/_websites/websites/import'
     | '/_protected/_websites/websites/new'
     | '/_protected/_clients/clients/'
     | '/_protected/_clients/clients/$clientId/edit'
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       path: '/websites/new'
       fullPath: '/websites/new'
       preLoaderRoute: typeof ProtectedWebsitesWebsitesNewRouteImport
+      parentRoute: typeof ProtectedWebsitesRoute
+    }
+    '/_protected/_websites/websites/import': {
+      id: '/_protected/_websites/websites/import'
+      path: '/websites/import'
+      fullPath: '/websites/import'
+      preLoaderRoute: typeof ProtectedWebsitesWebsitesImportRouteImport
       parentRoute: typeof ProtectedWebsitesRoute
     }
     '/_protected/_websites/websites/$websiteId': {
@@ -348,12 +368,14 @@ const ProtectedWebsitesWebsitesWebsiteIdRouteWithChildren =
 
 interface ProtectedWebsitesRouteChildren {
   ProtectedWebsitesWebsitesWebsiteIdRoute: typeof ProtectedWebsitesWebsitesWebsiteIdRouteWithChildren
+  ProtectedWebsitesWebsitesImportRoute: typeof ProtectedWebsitesWebsitesImportRoute
   ProtectedWebsitesWebsitesNewRoute: typeof ProtectedWebsitesWebsitesNewRoute
 }
 
 const ProtectedWebsitesRouteChildren: ProtectedWebsitesRouteChildren = {
   ProtectedWebsitesWebsitesWebsiteIdRoute:
     ProtectedWebsitesWebsitesWebsiteIdRouteWithChildren,
+  ProtectedWebsitesWebsitesImportRoute: ProtectedWebsitesWebsitesImportRoute,
   ProtectedWebsitesWebsitesNewRoute: ProtectedWebsitesWebsitesNewRoute,
 }
 

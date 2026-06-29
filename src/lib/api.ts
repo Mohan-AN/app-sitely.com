@@ -9,12 +9,12 @@ export class ApiError extends Error {
   errors?: string[]
   fieldErrors: Record<string, string>
 
-  constructor(message: string, code?: string, status?: number, errors?: string[]) {
+  constructor(message: string, code?: string, status?: number, errors?: string[], rawFieldErrors?: Record<string, string>) {
     super(message)
     this.code = code
     this.status = status
     this.errors = errors
-    this.fieldErrors = parseFieldErrors(errors)
+    this.fieldErrors = rawFieldErrors ?? parseFieldErrors(errors)
   }
 }
 
@@ -156,6 +156,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}, hasRe
       json.error?.code,
       res.status,
       Array.isArray(json.errors) ? (json.errors as string[]) : undefined,
+      json.field_errors && typeof json.field_errors === 'object' ? (json.field_errors as Record<string, string>) : undefined,
     )
   }
 

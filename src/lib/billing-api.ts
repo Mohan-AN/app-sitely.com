@@ -63,6 +63,17 @@ export async function recordPayment(input: RecordPaymentInput) {
   )
 }
 
+export async function attachBillingInvoice(websiteId: string, billingId: string, file: File) {
+  const { base64, name, contentType } = await toBase64(file)
+  return apiFetch<{ invoice_file_url: string; invoice_file_name: string }>(
+    `/websites/${websiteId}/billing/${billingId}/invoice`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ invoiceFileBase64: base64, invoiceFileName: name, invoiceContentType: contentType }),
+    },
+  )
+}
+
 export function listPayments(websiteId: string, page = 1, limit = 20) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) })
   return apiFetch<{ items: PaymentRecord[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(

@@ -7,7 +7,7 @@ import { WebsiteEditDialog } from '#/components/websites/website-edit-dialog'
 import { RecordPaymentDialog } from '#/components/websites/record-payment-dialog'
 import { AddRequestDialog } from '#/components/websites/add-request-dialog'
 import { StatusPill, MaintenanceBadge } from '#/components/websites/status-badges'
-import { useCurrentBillingId, useWebsite } from '#/hooks/use-websites'
+import { useWebsite } from '#/hooks/use-websites'
 import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/_protected/_websites/websites/$websiteId')({ component: WebsiteDetailPage })
@@ -16,14 +16,13 @@ function WebsiteDetailPage() {
   const { websiteId } = Route.useParams()
   const websiteQuery = useWebsite(websiteId)
   const website = websiteQuery.data
-  const { data: currentBillingId } = useCurrentBillingId(websiteId)
   const [editOpen, setEditOpen] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
 
   return (
     <div className="flex flex-1 flex-col overflow-auto bg-[#F4F5F7]">
-      <main className="flex flex-1 flex-col gap-[20px] px-[30px] py-[26px]">
+      <main className="flex flex-1 flex-col gap-[10px] px-[24px] py-[14px]">
 
         {/* Back button */}
         <Link
@@ -48,12 +47,12 @@ function WebsiteDetailPage() {
                 </div>
               </>
             ) : (
-              <div className="text-[22px] font-bold tracking-tight text-[#11141A]">
+              <div className="text-[20px] font-bold tracking-tight text-[#11141A]">
                 {website?.project_name ?? 'Website Details'}
               </div>
             )}
             {website ? (
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                 <span className="rounded-[7px] bg-[#F7F8FA] px-[11px] py-1 text-[11.5px] font-semibold text-[#5C6270]">
                   WEB-{String(website.id).padStart(3, '0')}
                 </span>
@@ -124,8 +123,8 @@ function WebsiteDetailPage() {
           <WebsiteEditDialog websiteId={websiteId} open={editOpen} onOpenChange={setEditOpen} />
           <RecordPaymentDialog
             websiteId={websiteId}
-            billingId={currentBillingId}
             projectName={website.project_name}
+            hostedDate={website.hosted_date ?? null}
             maintenanceAmount={website.maintenance_amount}
             open={paymentOpen}
             onOpenChange={setPaymentOpen}

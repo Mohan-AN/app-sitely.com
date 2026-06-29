@@ -1,14 +1,12 @@
 import { cn } from '#/lib/utils'
 import type { WebsiteStats, WebsitesFilters } from './types'
 
-export type WebsitesTabKey = 'all' | 'inProgress' | 'maintenanceOverdue' | 'domainOverdue' | 'dueSoon'
+export type WebsitesTabKey = 'all' | 'inProgress' | 'dueSoon'
 
 export const TAB_FILTERS: Record<WebsitesTabKey, Partial<WebsitesFilters>> = {
-  all:                {},
-  inProgress:         { websiteStatus: 'In Progress' },
-  maintenanceOverdue: { maintenanceOverdueOnly: true },
-  domainOverdue:      { domainOverdueOnly: true },
-  dueSoon:            { maintenanceStatus: 'Due Soon' },
+  all:        {},
+  inProgress: { websiteStatus: 'In Progress' },
+  dueSoon:    { maintenanceStatus: 'Due Soon' },
 }
 
 interface WebsitesTabsProps {
@@ -26,11 +24,9 @@ interface TabDef {
 
 export function WebsitesTabs({ active, stats, onChange }: WebsitesTabsProps) {
   const tabs: TabDef[] = [
-    { key: 'all',                label: 'All',                 count: stats?.websites },
-    { key: 'inProgress',         label: 'In Progress',         count: stats?.in_progress,            color: 'amber' },
-    { key: 'maintenanceOverdue', label: 'Maintenance Overdue', count: stats?.maintenance_overdue_count, color: 'red' },
-    { key: 'domainOverdue',      label: 'Domain Overdue',      count: stats?.domain_overdue_count,     color: 'red' },
-    { key: 'dueSoon',            label: 'Due Soon',            count: stats?.due_soon,                color: 'amber' },
+    { key: 'all',        label: 'All',         count: stats?.websites },
+    { key: 'inProgress', label: 'In Progress', count: stats?.in_progress, color: 'amber' },
+    { key: 'dueSoon',    label: 'Due Soon',    count: stats?.due_soon,    color: 'amber' },
   ]
 
   return (

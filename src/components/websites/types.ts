@@ -41,6 +41,7 @@ export interface Website {
   domain_provider: string | null
   domain_renewal_date: string | null
   domain_cost: string | null
+  domain_last_verified: string | null
   source?: string | null
   remarks: string | null
   created_at: string
@@ -237,10 +238,13 @@ export interface UpdateWebsiteInput {
   domainProvider?: string | null
   domainRenewalDate?: string | null
   domainCost?: string | null
+  domainLastVerified?: string | null
+  domainRemarks?: string | null
   billingCycle?: 'monthly' | 'yearly' | null
   maintenanceAmount?: string | null
   lastPaymentAmount?: string | null
   lastPaymentReceived?: string | null
+  lastInvoiceSent?: string | null
   renewalDate?: string | null
   transferCompleted?: boolean
   remarks?: string | null

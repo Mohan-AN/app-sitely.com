@@ -4,16 +4,18 @@ import { ChevronLeft, ChevronRight, MoreVertical, Eye, Pencil, RefreshCw, Trash2
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { NoResults } from '#/components/ui/no-results'
 import { PageSizeSelector } from '#/components/ui/page-size-selector'
+import { Skeleton } from '#/components/ui/skeleton'
 import { formatCurrency, formatDate } from '#/lib/format'
 import { cn } from '#/lib/utils'
 import { StatusPill } from './status-badges'
 import { WebsiteEditDialog } from './website-edit-dialog'
-import { WebsiteUpdateDialog } from './website-update-dialog'
+import { RenewDomainDialog } from './renew-domain-dialog'
 import type { Website } from './types'
 
 interface WebsitesTableProps {
   websites: Website[] | undefined
   isLoading: boolean
+  isFetching?: boolean
   isError: boolean
   error: Error | null
   sortBy?: string
@@ -27,40 +29,58 @@ interface WebsitesTableProps {
   dueSoonDays?: number
 }
 
-// 8 columns: Project | Client | Type | Domain | Maintenance | Next Due | Website | Actions
-const gridClass = 'grid grid-cols-[1.7fr_1fr_1fr_1.6fr_1fr_1.5fr_90px_50px]'
+// 8 columns: Project Name | Client | Build/Host Type | Domain | Maintenance | Next Due | Status | Actions
+const gridClass = 'grid grid-cols-[2.2fr_0.85fr_1.5fr_1.25fr_0.8fr_1.1fr_110px_42px]'
 
 function rowPriority(site: Website): number {
+  const domainDiff = site.domain_renewal_date ? dayDiff(site.domain_renewal_date) : null
+  const isDomainOverdue = domainDiff !== null && domainDiff < 0
+  const isDueSoon = site.maintenance_status === 'Due Soon' || (domainDiff !== null && domainDiff >= 0 && domainDiff <= 30)
+
   if (site.is_maintenance_overdue) return 0
-  if (site.maintenance_status === 'Due Soon') return 1
-  if (site.website_status === 'Live') return 2
-  if (site.website_status === 'In Progress') return 3
-  return 4
+  if (isDomainOverdue) return 1
+  if (isDueSoon) return 2
+  if (site.website_status === 'Live') return 3
+  if (site.website_status === 'In Progress') return 4
+  return 5
 }
 
 export function WebsitesTable({
-  websites, isLoading, isError, error,
+  websites, isLoading, isFetching, isError, error,
   sortBy, sortOrder, onSortChange,
   pagination, pageSize, onPageSizeChange, onPageChange,
   onDelete, dueSoonDays = 30,
 }: WebsitesTableProps) {
+  const showSkeleton = isLoading || isFetching
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* Header */}
       <div className={cn(gridClass, 'shrink-0 border-b border-[#E5E7EB] bg-[#FAFBFC]')}>
-        <Th>Project</Th>
+        <Th>Project Name</Th>
         <Th>Client</Th>
-        <SortTh field="siteType" label="Type" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
+        <SortTh field="siteType" label="Build/Host Type" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
         <Th>Domain</Th>
         <Th>Maintenance</Th>
         <SortTh field="renewalDate" label="Next Due" sortBy={sortBy} sortOrder={sortOrder} onSort={onSortChange} />
-        <Th center>Website</Th>
+        <Th center>Status</Th>
         <Th />
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {isLoading ? (
-          <StateRow>Loading...</StateRow>
+        {showSkeleton ? (
+          Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className={cn(gridClass, 'min-h-[56px] items-center border-b border-[#EEF0F2] px-0')}>
+              <div className="px-3 py-3"><Skeleton className="h-4 w-[70%] rounded-[6px]" /><Skeleton className="mt-1.5 h-3 w-[45%] rounded-[6px]" /></div>
+              <div className="px-3"><Skeleton className="h-3.5 w-[60%] rounded-[6px]" /></div>
+              <div className="px-3"><Skeleton className="h-3.5 w-[50%] rounded-[6px]" /></div>
+              <div className="px-3"><Skeleton className="h-3.5 w-[65%] rounded-[6px]" /><Skeleton className="mt-1.5 h-3 w-[40%] rounded-[6px]" /></div>
+              <div className="px-3"><Skeleton className="h-6 w-[70%] rounded-[7px]" /></div>
+              <div className="px-3"><Skeleton className="h-3.5 w-[55%] rounded-[6px]" /></div>
+              <div className="flex justify-center px-3"><Skeleton className="h-6 w-14 rounded-[7px]" /></div>
+              <div className="px-3"><Skeleton className="h-6 w-6 rounded-[6px]" /></div>
+            </div>
+          ))
         ) : isError ? (
           <StateRow className="text-[#DC2626]">{error?.message ?? 'Something went wrong.'}</StateRow>
         ) : !websites || websites.length === 0 ? (
@@ -107,8 +127,8 @@ export function WebsitesTable({
 
 function WebsiteRow({ site, onDelete, dueSoonDays }: { site: Website; onDelete?: (site: Website) => void; dueSoonDays: number }) {
   const navigate = useNavigate()
-  const [updateOpen, setUpdateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [renewOpen, setRenewOpen] = useState(false)
 
   const isOverdue = site.is_maintenance_overdue
   const isDueSoon = !isOverdue && site.maintenance_status === 'Due Soon'
@@ -144,7 +164,7 @@ function WebsiteRow({ site, onDelete, dueSoonDays }: { site: Website; onDelete?:
 
       {/* Type: "build_type / platform" */}
       <Cell>
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <div className="truncate font-semibold text-[#3D4250]">
             {[site.build_type || site.site_type, site.platform].filter(Boolean).join(' / ')}
           </div>
@@ -152,7 +172,7 @@ function WebsiteRow({ site, onDelete, dueSoonDays }: { site: Website; onDelete?:
       </Cell>
 
       {/* Domain */}
-      <Cell><DomainCell site={site} dueSoonDays={dueSoonDays} /></Cell>
+      <Cell><DomainCell site={site} dueSoonDays={dueSoonDays} onRenew={() => setRenewOpen(true)} /></Cell>
 
       {/* Maintenance */}
       <Cell>
@@ -187,12 +207,12 @@ function WebsiteRow({ site, onDelete, dueSoonDays }: { site: Website; onDelete?:
                 <Eye className="size-3.5 text-[#8A8F98]" /> View
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#3D4250] focus:bg-[#F4F5F7]"
-                onClick={() => setUpdateOpen(true)}>
-                <RefreshCw className="size-3.5 text-[#8A8F98]" /> Update
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#3D4250] focus:bg-[#F4F5F7]"
                 onClick={() => setEditOpen(true)}>
                 <Pencil className="size-3.5 text-[#8A8F98]" /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg px-3 py-[9px] text-[12.5px] font-medium text-[#3D4250] focus:bg-[#F4F5F7]"
+                onClick={() => setRenewOpen(true)}>
+                <RefreshCw className="size-3.5 text-[#8A8F98]" /> Renew Domain
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -205,8 +225,8 @@ function WebsiteRow({ site, onDelete, dueSoonDays }: { site: Website; onDelete?:
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <WebsiteUpdateDialog websiteId={String(site.id)} open={updateOpen} onOpenChange={setUpdateOpen} />
-        <WebsiteEditDialog websiteId={String(site.id)} open={editOpen} onOpenChange={setEditOpen} />
+<WebsiteEditDialog websiteId={String(site.id)} open={editOpen} onOpenChange={setEditOpen} />
+        <RenewDomainDialog website={site} open={renewOpen} onOpenChange={setRenewOpen} />
       </Cell>
     </div>
   )
@@ -214,7 +234,7 @@ function WebsiteRow({ site, onDelete, dueSoonDays }: { site: Website; onDelete?:
 
 // ── Domain Cell ───────────────────────────────────────────────────────────────
 
-function DomainCell({ site, dueSoonDays }: { site: Website; dueSoonDays: number }) {
+function DomainCell({ site, dueSoonDays, onRenew }: { site: Website; dueSoonDays: number; onRenew?: () => void }) {
   const handledBy = site.domain_handled_by
   if (!handledBy && !site.domain_name) return <span className="text-[#C7CAD1]">—</span>
 
@@ -234,9 +254,17 @@ function DomainCell({ site, dueSoonDays }: { site: Website; dueSoonDays: number 
         <div className="text-[11px] text-[#8A8F98]">Renewal unknown</div>
       )}
       {isDomainOverdue && diff !== null ? (
-        <div className="text-[11px] font-semibold text-[#DC2626]">overdue by {Math.abs(diff)} days</div>
+        <button type="button"
+          onClick={(e) => { e.stopPropagation(); onRenew?.() }}
+          className="text-[11px] font-semibold text-[#DC2626] underline decoration-dotted hover:text-[#B91C1C]">
+          overdue by {Math.abs(diff)} days
+        </button>
       ) : isDomainDueSoon && diff !== null ? (
-        <div className="text-[11px] font-semibold text-[#D97706]">due in {diff} days</div>
+        <button type="button"
+          onClick={(e) => { e.stopPropagation(); onRenew?.() }}
+          className="text-[11px] font-semibold text-[#D97706] underline decoration-dotted hover:text-[#B45309]">
+          due in {diff} days
+        </button>
       ) : null}
     </div>
   )
