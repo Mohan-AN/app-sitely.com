@@ -6,6 +6,7 @@ import { WebsiteDetail, WebsiteDetailSkeleton } from '#/components/websites/webs
 import { WebsiteEditDialog } from '#/components/websites/website-edit-dialog'
 import { RecordPaymentDialog } from '#/components/websites/record-payment-dialog'
 import { AddRequestDialog } from '#/components/websites/add-request-dialog'
+import { RenewDomainDialog } from '#/components/websites/renew-domain-dialog'
 import { StatusPill, MaintenanceBadge } from '#/components/websites/status-badges'
 import { useWebsite } from '#/hooks/use-websites'
 import { cn } from '#/lib/utils'
@@ -19,6 +20,7 @@ function WebsiteDetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
+  const [renewOpen, setRenewOpen] = useState(false)
 
   return (
     <div className="flex flex-1 flex-col overflow-auto bg-[#F4F5F7]">
@@ -78,6 +80,7 @@ function WebsiteDetailPage() {
                 <Skeleton className="h-9 w-28 rounded-[9px]" />
                 <Skeleton className="h-9 w-28 rounded-[9px]" />
                 <Skeleton className="h-9 w-32 rounded-[9px]" />
+                <Skeleton className="h-9 w-32 rounded-[9px]" />
               </>
             ) : (
               <>
@@ -96,6 +99,14 @@ function WebsiteDetailPage() {
                   className={cn('inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#E5E7EB] bg-white px-4 text-[12.5px] font-semibold text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5]', !website && 'opacity-50 cursor-not-allowed')}
                 >
                   Edit Website
+                </button>
+                <button
+                  type="button"
+                  disabled={!website}
+                  onClick={() => setRenewOpen(true)}
+                  className={cn('inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#E5E7EB] bg-white px-4 text-[12.5px] font-semibold text-[#5C6270] transition hover:border-[#D6D9FC] hover:text-[#4F5DF5]', !website && 'opacity-50 cursor-not-allowed')}
+                >
+                  Renew Domain
                 </button>
                 <button
                   type="button"
@@ -134,6 +145,11 @@ function WebsiteDetailPage() {
             projectName={website.project_name}
             open={requestOpen}
             onOpenChange={setRequestOpen}
+          />
+          <RenewDomainDialog
+            website={website}
+            open={renewOpen}
+            onOpenChange={setRenewOpen}
           />
         </>
       ) : null}

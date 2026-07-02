@@ -58,6 +58,19 @@ export function WebsitesFiltersBar({ filters, onChange, clients }: WebsitesFilte
     onChange({ ...filters, [key]: value })
   }
 
+  const hasActiveFilters = Boolean(
+    filters.clientId ||
+    filters.siteType ||
+    filters.platform ||
+    filters.websiteStatus ||
+    filters.maintenanceStatus ||
+    filters.overdueOnly ||
+    filters.maintenanceOverdueOnly ||
+    filters.domainOverdueOnly ||
+    filters.domainNotSetUp ||
+    filters.transferPending,
+  )
+
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2">
       <FilterSelect placeholder="All clients" value={filters.clientId} onChange={(value) => set('clientId', value)} options={clients.map((client) => ({ value: String(client.id), label: client.name }))} />
@@ -75,9 +88,11 @@ export function WebsitesFiltersBar({ filters, onChange, clients }: WebsitesFilte
         onChange={(value) => set('maintenanceStatus', value)}
         options={MAINTENANCE_STATUSES.map((status) => ({ value: status, label: status }))}
       />
-      <Button variant="link" size="sm" className="h-10 px-1 text-emerald-700" onClick={() => onChange({ search: filters.search })}>
-        Clear all
-      </Button>
+      {hasActiveFilters ? (
+        <Button variant="link" size="sm" className="h-10 px-1 text-emerald-700" onClick={() => onChange({ search: filters.search })}>
+          Clear all
+        </Button>
+      ) : null}
     </div>
   )
 }

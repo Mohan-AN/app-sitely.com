@@ -54,6 +54,8 @@ function LoginScreen() {
   const [view, setView] = useState<AuthView>('login')
 
   // Login
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loginFieldErrors, setLoginFieldErrors] = useState<Record<string, string>>({})
   const [loginFormError, setLoginFormError] = useState<string | undefined>()
@@ -79,6 +81,11 @@ function LoginScreen() {
         body: JSON.stringify({ email: e, password: p }),
       }),
     onSuccess: (data) => {
+      setLoginEmail('')
+      setLoginPassword('')
+      setLoginFieldErrors({})
+      setLoginFormError(undefined)
+      setShowPassword(false)
       localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token)
       localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
       navigate({ to: redirectTo ?? '/' })
@@ -142,6 +149,11 @@ function LoginScreen() {
   }
 
   function goToLogin() {
+    setLoginEmail('')
+    setLoginPassword('')
+    setLoginFieldErrors({})
+    setLoginFormError(undefined)
+    setShowPassword(false)
     setView('login')
   }
 
@@ -166,10 +178,9 @@ function LoginScreen() {
 
             <form onSubmit={(e) => {
               e.preventDefault()
-              const fd = new FormData(e.currentTarget)
               loginMutation.mutate({
-                email: ((fd.get('email') as string) ?? '').trim(),
-                password: (fd.get('password') as string) ?? '',
+                email: loginEmail.trim(),
+                password: loginPassword,
               })
             }} className="flex flex-col gap-5" noValidate>
               <div className="flex flex-col gap-1.5">
@@ -178,8 +189,12 @@ function LoginScreen() {
                   id="email"
                   name="email"
                   type="email"
-                  defaultValue=""
-                  onChange={() => { setLoginFieldErrors((f) => ({ ...f, email: undefined! })); setLoginFormError(undefined) }}
+                  value={loginEmail}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value)
+                    setLoginFieldErrors((f) => ({ ...f, email: undefined! }))
+                    setLoginFormError(undefined)
+                  }}
                   className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 font-semibold text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${loginFieldErrors.email ? 'border-red-400' : ''}`}
                   placeholder="name@example.com"
                   autoComplete="email"
@@ -194,8 +209,12 @@ function LoginScreen() {
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    defaultValue=""
-                    onChange={() => { setLoginFieldErrors((f) => ({ ...f, password: undefined! })); setLoginFormError(undefined) }}
+                    value={loginPassword}
+                    onChange={(e) => {
+                      setLoginPassword(e.target.value)
+                      setLoginFieldErrors((f) => ({ ...f, password: undefined! }))
+                      setLoginFormError(undefined)
+                    }}
                     className={`h-12 w-full rounded-xl border-[#E5E7EB] bg-white px-4 pr-10 font-semibold text-[#11141A] transition-all focus-visible:border-[#4F5DF5] focus-visible:ring-[#D6D9FC] ${loginFieldErrors.password ? 'border-red-400' : ''}`}
                     placeholder="Enter your password"
                     autoComplete="current-password"

@@ -56,7 +56,7 @@ export const Route = createFileRoute('/_protected/')({
 })
 
 function isWebsiteTab(value: unknown): value is WebsitesTabKey {
-  return value === 'all' || value === 'inProgress' || value === 'dueSoon'
+  return value === 'all' || value === 'inProgress' || value === 'overdue' || value === 'dueSoon'
 }
 
 function pickFilters(search: WebsitesSearch): WebsitesFilters {

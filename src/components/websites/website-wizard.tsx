@@ -682,13 +682,13 @@ export function WebsiteWizard(props: WebsiteWizardProps) {
                       />
                     </Field>
 
-                    <Field label="Domain Renewal Date" error={e.domainRenewalDate?.message}>
-                      <Input type="date" className="h-9 rounded-[9px] border-[#d9dee8] text-[13px]" {...form.register('domainRenewalDate')} />
-                    </Field>
-
                     <Field label="Domain Cost / Year" error={e.domainCost?.message}
                       hint="Deducted only when domain is handled by our side." hintGreen>
                       <MoneyInput placeholder="1200" {...form.register('domainCost')} />
+                    </Field>
+
+                    <Field label="Domain Renewal Date" error={e.domainRenewalDate?.message}>
+                      <Input type="date" className="h-9 rounded-[9px] border-[#d9dee8] text-[13px]" {...form.register('domainRenewalDate')} />
                     </Field>
 
                     <Field label="Hosting Cost / Year" error={e.hostingCost?.message}
