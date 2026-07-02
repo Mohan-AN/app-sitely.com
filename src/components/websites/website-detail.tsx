@@ -562,17 +562,17 @@ function EventRow({ ev, invoiceUrl, onAttachInvoice, onEditRequest }: {
         {ev.display_amount && <div className="mt-[2px] text-[11.5px] font-bold text-[#4F5DF5]">{ev.display_amount}</div>}
       </div>
       {editableRequest && (() => {
-        const isUnpaid = ev.event_type === 'feature' && ev.subtitle?.toLowerCase().includes('unpaid')
+        const isRequestActionVisible = ev.event_type === 'bug' || ev.event_type === 'feature'
         return (
           <button
             type="button"
             onClick={() => onEditRequest(editableRequest)}
             title="Edit request"
             className={cn(
-              'mt-[1px] flex size-[22px] shrink-0 items-center justify-center rounded-[6px] transition hover:bg-[#F0F1FF] hover:text-[#4F5DF5]',
-              isUnpaid
-                ? 'text-[#D97706] opacity-100'
-                : 'text-[#C4C9D4] opacity-0 group-hover:opacity-100',
+              'mt-[1px] flex size-[22px] shrink-0 items-center justify-center rounded-[6px] transition',
+              isRequestActionVisible
+                ? 'bg-[#F0F1FF] text-[#4F5DF5] opacity-100 hover:bg-[#E3E7FF] hover:text-[#3F4DE0]'
+                : 'text-[#C4C9D4] opacity-0 group-hover:opacity-100 hover:bg-[#F0F1FF] hover:text-[#4F5DF5]',
             )}
           >
             <Pencil className="size-[12px]" />

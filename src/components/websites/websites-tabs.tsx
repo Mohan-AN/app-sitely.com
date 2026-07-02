@@ -1,11 +1,12 @@
 import { cn } from '#/lib/utils'
 import type { WebsiteStats, WebsitesFilters } from './types'
 
-export type WebsitesTabKey = 'all' | 'inProgress' | 'dueSoon'
+export type WebsitesTabKey = 'all' | 'inProgress' | 'overdue' | 'dueSoon'
 
 export const TAB_FILTERS: Record<WebsitesTabKey, Partial<WebsitesFilters>> = {
   all:        {},
   inProgress: { websiteStatus: 'In Progress' },
+  overdue:    { overdueOnly: true },
   dueSoon:    { maintenanceStatus: 'Due Soon' },
 }
 
@@ -26,6 +27,7 @@ export function WebsitesTabs({ active, stats, onChange }: WebsitesTabsProps) {
   const tabs: TabDef[] = [
     { key: 'all',        label: 'All',         count: stats?.websites },
     { key: 'inProgress', label: 'In Progress', count: stats?.in_progress, color: 'amber' },
+    { key: 'overdue',    label: 'Overdue',     count: stats ? stats.maintenance_overdue_count + stats.domain_overdue_count : undefined, color: 'red' },
     { key: 'dueSoon',    label: 'Due Soon',    count: stats?.due_soon,    color: 'amber' },
   ]
 

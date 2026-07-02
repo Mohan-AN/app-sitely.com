@@ -427,13 +427,13 @@ export function WebsiteForm(props: WebsiteFormProps) {
             />
           </Field>
 
-          <Field label="Domain Renewal Date" error={e.domainRenewalDate?.message}>
-            <Input type="date" className="h-8 rounded-[8px] border-[#C9CDD6] text-[12px] placeholder:text-[#9CA3AF]" {...form.register('domainRenewalDate')} />
-          </Field>
-
           <Field label="Domain Cost / Year" error={e.domainCost?.message} className="col-span-2"
             hint="Deducted from annual profit only if handled by our side">
             <MoneyInput placeholder="1200" {...form.register('domainCost')} />
+          </Field>
+
+          <Field label="Domain Renewal Date" error={e.domainRenewalDate?.message}>
+            <Input type="date" className="h-8 rounded-[8px] border-[#C9CDD6] text-[12px] placeholder:text-[#9CA3AF]" {...form.register('domainRenewalDate')} />
           </Field>
         </FormCard>
 
