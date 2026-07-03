@@ -11,8 +11,9 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
-    "build": "vite build",
-    "preview": "vite preview",
+    "build": "npm run generate-routes && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "start": "vite preview --host 0.0.0.0 --port 3000",
     "test": "vitest run"
   },
   "dependencies": {

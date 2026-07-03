@@ -1,7 +1,7 @@
 //#region \0tanstack-start-manifest:v
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/__root.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/__root.tsx",
 		children: ["/_auth", "/_protected"],
 		preloads: [
 			"/assets/index-Dm-pLJOE.js",
@@ -18,7 +18,7 @@ var tsrStartManifest = () => ({ routes: {
 		} }]
 	},
 	"/_auth": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_auth.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_auth.tsx",
 		children: ["/_auth/login"],
 		preloads: [
 			"/assets/_auth-BhMW3sHO.js",
@@ -28,7 +28,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected.tsx",
 		children: [
 			"/_protected/_clients",
 			"/_protected/_websites",
@@ -48,7 +48,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_auth/login": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_auth/login.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_auth/login.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/login-DPjqdN_g.js",
@@ -59,7 +59,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/_clients": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_clients.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_clients.tsx",
 		children: [
 			"/_protected/_clients/clients/$clientId",
 			"/_protected/_clients/clients/new",
@@ -68,7 +68,7 @@ var tsrStartManifest = () => ({ routes: {
 		preloads: ["/assets/_clients-BQhc-7Mr.js"]
 	},
 	"/_protected/_websites": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_websites.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_websites.tsx",
 		children: [
 			"/_protected/_websites/websites/$websiteId",
 			"/_protected/_websites/websites/import",
@@ -77,7 +77,7 @@ var tsrStartManifest = () => ({ routes: {
 		preloads: ["/assets/_websites-BQhc-7Mr.js"]
 	},
 	"/_protected/settings": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/settings.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/settings.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/settings-CMxTQ6dS.js",
@@ -94,7 +94,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/index.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/index.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/_protected-CZvggTmq.js",
@@ -114,7 +114,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/_clients/clients/$clientId": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_clients/clients.$clientId.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_clients/clients.$clientId.tsx",
 		children: ["/_protected/_clients/clients/$clientId/edit"],
 		preloads: [
 			"/assets/clients._clientId-B8fZRnmc.js",
@@ -130,7 +130,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/_clients/clients/new": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_clients/clients.new.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_clients/clients.new.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/clients.new-rUWQgYgv.js",
@@ -139,7 +139,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/_websites/websites/$websiteId": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_websites/websites.$websiteId.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_websites/websites.$websiteId.tsx",
 		children: ["/_protected/_websites/websites/$websiteId/edit"],
 		preloads: [
 			"/assets/websites._websiteId-HcH_IcgO.js",
@@ -157,7 +157,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/_websites/websites/import": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_websites/websites.import.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_websites/websites.import.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/websites.import-CdAEhcTh.js",
@@ -170,12 +170,12 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/_websites/websites/new": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_websites/websites.new.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_websites/websites.new.tsx",
 		children: void 0,
 		preloads: ["/assets/websites.new-Dtw6JP-7.js", "/assets/website-wizard-OGuFCDvm.js"]
 	},
 	"/_protected/_clients/clients/": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_clients/clients.index.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_clients/clients.index.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/clients.index-CHgzHYoZ.js",
@@ -193,7 +193,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/_clients/clients/$clientId/edit": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_clients/clients.$clientId.edit.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_clients/clients.$clientId.edit.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/clients._clientId.edit-BH4AZa2E.js",
@@ -202,7 +202,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/_protected/_websites/websites/$websiteId/edit": {
-		filePath: "C:/Users/sirig/Actnos-project/app.sitely.com/src/routes/_protected/_websites/websites.$websiteId.edit.tsx",
+		filePath: "C:/Users/sirig/Actnos-project/app-sitely.com/src/routes/_protected/_websites/websites.$websiteId.edit.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/websites._websiteId.edit-CLHIWAlX.js",
