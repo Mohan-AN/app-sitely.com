@@ -11,18 +11,22 @@ import { cn } from '#/lib/utils'
 
 const SIDEBAR_KEY = 'sitely-sidebar-collapsed'
 
+function hasBrowserStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
 function getStoredSidebarState() {
-  if (typeof window === 'undefined') return false
+  if (!hasBrowserStorage()) return false
   return window.localStorage.getItem(SIDEBAR_KEY) === 'true'
 }
 
 function getStoredRefreshToken() {
-  if (typeof window === 'undefined') return null
+  if (!hasBrowserStorage()) return null
   return window.localStorage.getItem(REFRESH_TOKEN_KEY)
 }
 
 function clearStoredTokens() {
-  if (typeof window === 'undefined') return
+  if (!hasBrowserStorage()) return
   window.localStorage.removeItem(ACCESS_TOKEN_KEY)
   window.localStorage.removeItem(REFRESH_TOKEN_KEY)
 }

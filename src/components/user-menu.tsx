@@ -17,13 +17,17 @@ import { ManageDueDateDialog } from '#/components/manage-due-date-dialog'
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, apiFetch } from '#/lib/api'
 import { authMeQueryOptions } from '#/lib/auth'
 
+function hasBrowserStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
 function getStoredRefreshToken() {
-  if (typeof window === 'undefined') return null
+  if (!hasBrowserStorage()) return null
   return window.localStorage.getItem(REFRESH_TOKEN_KEY)
 }
 
 function clearStoredTokens() {
-  if (typeof window === 'undefined') return
+  if (!hasBrowserStorage()) return
   window.localStorage.removeItem(ACCESS_TOKEN_KEY)
   window.localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
