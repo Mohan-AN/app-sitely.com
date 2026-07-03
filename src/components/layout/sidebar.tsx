@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronUp, ChevronsLeft, ChevronsRight, Globe, LogOut, Settings, Users } from 'lucide-react'
@@ -42,11 +42,17 @@ export function AppLayoutSidebar() {
   const queryClient = useQueryClient()
   const { data: user } = useQuery(authMeQueryOptions)
   const { data: stats } = useWebsiteStats()
-  const [collapsed, setCollapsed] = useState(getStoredSidebarState)
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    setCollapsed(getStoredSidebarState())
+  }, [])
 
   const toggle = () => {
     setCollapsed((prev) => {
-      window.localStorage.setItem(SIDEBAR_KEY, String(!prev))
+      if (hasBrowserStorage()) {
+        window.localStorage.setItem(SIDEBAR_KEY, String(!prev))
+      }
       return !prev
     })
   }

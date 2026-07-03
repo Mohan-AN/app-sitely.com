@@ -9,20 +9,34 @@ function applyTheme(theme: Theme) {
   document.documentElement.style.colorScheme = theme
 }
 
-function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'light'
-  const stored = window.localStorage.getItem(THEME_KEY)
-  if (stored === 'light' || stored === 'dark') return stored
-  return 'light'
+function hasBrowserStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme)
+  const [theme, setTheme] = useState<Theme>('light')
+  const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
+    if (!hasBrowserStorage()) return
+
+    const stored = window.localStorage.getItem(THEME_KEY)
+    if (stored === 'light' || stored === 'dark') {
+      setTheme(stored)
+    } else {
+      applyTheme('light')
+    }
+
+    setIsHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
     applyTheme(theme)
-    window.localStorage.setItem(THEME_KEY, theme)
-  }, [theme])
+    if (hasBrowserStorage() && isHydrated) {
+      window.localStorage.setItem(THEME_KEY, theme)
+    }
+  }, [isHydrated, theme])
 
   const toggleTheme = () => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
 

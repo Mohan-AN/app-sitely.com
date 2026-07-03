@@ -6,6 +6,10 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, ApiError, apiFetch } from '#/lib/api'
 
+function hasBrowserStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
 export const Route = createFileRoute('/_auth/login')({
   validateSearch: (search) => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
@@ -86,8 +90,10 @@ function LoginScreen() {
       setLoginFieldErrors({})
       setLoginFormError(undefined)
       setShowPassword(false)
-      localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token)
-      localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
+      if (hasBrowserStorage()) {
+        window.localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token)
+        window.localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
+      }
       navigate({ to: redirectTo ?? '/' })
     },
     onError: (err: Error) => {
