@@ -11,6 +11,22 @@ import { cn } from '#/lib/utils'
 
 const SIDEBAR_KEY = 'sitely-sidebar-collapsed'
 
+function getStoredSidebarState() {
+  if (typeof window === 'undefined') return false
+  return window.localStorage.getItem(SIDEBAR_KEY) === 'true'
+}
+
+function getStoredRefreshToken() {
+  if (typeof window === 'undefined') return null
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY)
+}
+
+function clearStoredTokens() {
+  if (typeof window === 'undefined') return
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY)
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY)
+}
+
 function initials(name?: string) {
   if (!name) return 'S'
   return name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
@@ -22,11 +38,11 @@ export function AppLayoutSidebar() {
   const queryClient = useQueryClient()
   const { data: user } = useQuery(authMeQueryOptions)
   const { data: stats } = useWebsiteStats()
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === 'true')
+  const [collapsed, setCollapsed] = useState(getStoredSidebarState)
 
   const toggle = () => {
     setCollapsed((prev) => {
-      localStorage.setItem(SIDEBAR_KEY, String(!prev))
+      window.localStorage.setItem(SIDEBAR_KEY, String(!prev))
       return !prev
     })
   }
@@ -35,11 +51,10 @@ export function AppLayoutSidebar() {
     mutationFn: () =>
       apiFetch('/auth/logout', {
         method: 'POST',
-        body: JSON.stringify({ refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY) }),
+        body: JSON.stringify({ refreshToken: getStoredRefreshToken() }),
       }),
     onSettled: () => {
-      localStorage.removeItem(ACCESS_TOKEN_KEY)
-      localStorage.removeItem(REFRESH_TOKEN_KEY)
+      clearStoredTokens()
       queryClient.clear()
       navigate({ to: '/login', search: { redirect: undefined } })
     },

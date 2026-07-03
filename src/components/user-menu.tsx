@@ -17,6 +17,17 @@ import { ManageDueDateDialog } from '#/components/manage-due-date-dialog'
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, apiFetch } from '#/lib/api'
 import { authMeQueryOptions } from '#/lib/auth'
 
+function getStoredRefreshToken() {
+  if (typeof window === 'undefined') return null
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY)
+}
+
+function clearStoredTokens() {
+  if (typeof window === 'undefined') return
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY)
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY)
+}
+
 function initials(name: string) {
   return name
     .split(' ')
@@ -46,11 +57,10 @@ export function UserMenu({ collapsed }: { collapsed?: boolean }) {
     mutationFn: () =>
       apiFetch('/auth/logout', {
         method: 'POST',
-        body: JSON.stringify({ refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY) }),
+        body: JSON.stringify({ refreshToken: getStoredRefreshToken() }),
       }),
     onSettled: () => {
-      localStorage.removeItem(ACCESS_TOKEN_KEY)
-      localStorage.removeItem(REFRESH_TOKEN_KEY)
+      clearStoredTokens()
       queryClient.clear()
       navigate({ to: '/login', search: { redirect: undefined } })
     },
