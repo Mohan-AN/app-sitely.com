@@ -2,9 +2,13 @@ import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { CalendarClock, Globe2, Users, type LucideIcon } from 'lucide-react'
 import { ACCESS_TOKEN_KEY } from '#/lib/api'
 
+function hasBrowserStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
 export const Route = createFileRoute('/_auth')({
   beforeLoad: () => {
-    if (typeof window !== 'undefined' && localStorage.getItem(ACCESS_TOKEN_KEY)) {
+    if (hasBrowserStorage() && window.localStorage.getItem(ACCESS_TOKEN_KEY)) {
       throw redirect({ to: '/', search: { page: 1, limit: 10, showFilters: false } })
     }
   },

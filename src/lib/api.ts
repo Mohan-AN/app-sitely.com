@@ -49,18 +49,22 @@ let pendingQueue: QueueEntry[] = []
 
 const SKIP_REFRESH_PATHS = ['/auth/refresh', '/auth/login', '/auth/reset-password']
 
+function hasBrowserStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
 function getAccessToken() {
-  return typeof window !== 'undefined' ? localStorage.getItem(ACCESS_TOKEN_KEY) : null
+  return hasBrowserStorage() ? window.localStorage.getItem(ACCESS_TOKEN_KEY) : null
 }
 
 function getRefreshToken() {
-  return typeof window !== 'undefined' ? localStorage.getItem(REFRESH_TOKEN_KEY) : null
+  return hasBrowserStorage() ? window.localStorage.getItem(REFRESH_TOKEN_KEY) : null
 }
 
 function clearTokens() {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(ACCESS_TOKEN_KEY)
-  localStorage.removeItem(REFRESH_TOKEN_KEY)
+  if (!hasBrowserStorage()) return
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY)
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
 function redirectToLogin() {
@@ -98,8 +102,9 @@ async function performRefresh(): Promise<boolean> {
   if (!res.ok || !json.success) return false
 
   const tokens = json.data as TokenPair
-  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token)
-  if (tokens.refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
+  if (!hasBrowserStorage()) return false
+  window.localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token)
+  if (tokens.refresh_token) window.localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
   return true
 }
 

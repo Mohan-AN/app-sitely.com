@@ -4,19 +4,23 @@ import { ACCESS_TOKEN_KEY } from '#/lib/api'
 import { authMeQueryOptions } from '#/lib/auth'
 import { queryClient } from '#/lib/query-client'
 
+function hasBrowserStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
 export const Route = createFileRoute('/_protected')({
   beforeLoad: ({ location }) => {
-    if (typeof window === 'undefined') return
+    if (!hasBrowserStorage()) return
 
-    // Redirect immediately if no token — no network call needed.
-    if (!localStorage.getItem(ACCESS_TOKEN_KEY)) {
+    // Redirect immediately if no token; no network call needed.
+    if (!window.localStorage.getItem(ACCESS_TOKEN_KEY)) {
       throw redirect({
         to: '/login',
         search: { redirect: location.pathname },
       })
     }
 
-    // If the auth query previously failed (within 10s), redirect without retrying.
+    // If the auth query previously failed within 10s, redirect without retrying.
     const state = queryClient.getQueryState(authMeQueryOptions.queryKey)
     if (state?.status === 'error' && state.errorUpdatedAt > Date.now() - 10_000) {
       throw redirect({
@@ -24,8 +28,6 @@ export const Route = createFileRoute('/_protected')({
         search: { redirect: location.pathname },
       })
     }
-    // Auth is verified in the background by the sidebar's useQuery(authMeQueryOptions).
-    // apiFetch handles 401 by clearing tokens and redirecting to /login automatically.
   },
   component: ProtectedLayout,
 })
